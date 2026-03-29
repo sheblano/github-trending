@@ -158,7 +158,7 @@ libs/server        Backend domain libraries:
 
 ```bash
 # 1. Clone and configure
-git clone https://github.com/<your-username>/github-trending.git
+git clone https://github.com/sheblano/github-trending.git
 cd github-trending
 cp .env.example .env
 
@@ -287,3 +287,7 @@ Because both projects are MIT-licensed and self-hosted, you own the full stack â
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Built by [@sheblano](https://github.com/sheblano)

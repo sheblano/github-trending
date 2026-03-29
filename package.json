@@ -1,6 +1,7 @@
 {
   "name": "@github-trending/source",
   "version": "0.0.0",
+  "author": "Mohamed Shebl (https://github.com/sheblano)",
   "license": "MIT",
   "scripts": {},
   "private": true,
