@@ -78,7 +78,6 @@ The app requests these scopes during login:
 | --------------------- | ---------------------------------------------- | ---------------------------------------------------------- |
 | `GITHUB_CLIENT_ID`    | OAuth App Client ID                            | `Iv1.abc123`                                               |
 | `GITHUB_CLIENT_SECRET`| OAuth App Client Secret                        | `secret_xyz`                                               |
-| `SESSION_SECRET`      | Signs the httpOnly session cookie              | Any random string (32+ chars)                              |
 | `ENCRYPTION_KEY`      | Encrypts stored GitHub tokens (32 bytes hex)   | `openssl rand -hex 32`                                     |
 | `DATABASE_URL`        | PostgreSQL connection string                   | `postgresql://trending:trending_pass@postgres:5432/github_trending` |
 | `NEXT_PUBLIC_APP_URL` | Frontend URL (for OAuth redirects)             | `http://localhost:4200`                                    |
@@ -92,11 +91,9 @@ The app requests these scopes during login:
 # 1. Copy the example env file
 cp .env.example .env
 
-# 2. Fill in your GitHub OAuth credentials and generate secrets
-#    Edit .env and set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET
-#    Generate secrets:
+# 2. Fill in your GitHub OAuth credentials and generate the encryption key
+#    Edit .env and set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and ENCRYPTION_KEY:
 openssl rand -hex 32  # use output for ENCRYPTION_KEY
-openssl rand -base64 32  # use output for SESSION_SECRET
 
 # 3. Build and start all services
 docker compose up --build
@@ -145,7 +142,7 @@ docker compose down -v       # stop and delete database volume
 ```bash
 # 1. Copy and configure .env (do this first so DATABASE_URL is available)
 cp .env.example .env
-# Edit .env: set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET, ENCRYPTION_KEY
+# Edit .env: set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, ENCRYPTION_KEY
 # Make sure DATABASE_URL points to localhost:
 #   DATABASE_URL=postgresql://trending:trending_pass@localhost:5432/github_trending
 
@@ -163,7 +160,7 @@ npx prisma db push --schema=apps/backend/prisma/schema.prisma
 npx nx run-many -t serve -p frontend backend
 ```
 
-Step 4 creates all tables (`User`, `Session`, `FollowedRepo`, `ReleaseCache`)
+Step 4 creates all tables (`User`, `Session`, `FollowedRepo`, `ReleaseCache`, `ApiAccessToken`, and others)
 in the local PostgreSQL database. You only need to run it once, or again if you
 change the Prisma schema.
 
@@ -180,7 +177,7 @@ Ensure the callback URL in your GitHub OAuth App settings exactly matches:
 
 ### Missing environment variables
 
-The backend will fail to start if `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`, or `ENCRYPTION_KEY` are missing. Check your `.env` file.
+The backend will fail to start if `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, or `ENCRYPTION_KEY` are missing. Check your `.env` file.
 
 ### GitHub rate limiting
 

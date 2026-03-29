@@ -64,7 +64,7 @@ Hover for a tooltip listing the specific reasons behind the score.
 
 Toggle between **Default** (GitHub's ranking) and **Radar** (momentum + health ranking). Radar mode:
 
-- Re-sorts repos by a weighted signal combining watch score, star growth velocity, push freshness, and topic breadth
+- Re-sorts repos by a weighted signal combining watch score, star growth momentum, push freshness, and topic breadth
 - Shows a **radar rank** chip per repo
 - Highlights **"hot" repos** (score >= 72) with a purple accent border
 - Surfaces reasons like *"Strong star growth"*, *"Recently pushed"*, *"Fresh commits"*
@@ -179,10 +179,9 @@ git clone https://github.com/sheblano/github-trending.git
 cd github-trending
 cp .env.example .env
 
-# 2. Edit .env: add your GitHub OAuth credentials and generate secrets
+# 2. Edit .env: add your GitHub OAuth credentials and generate an encryption key
 #    GITHUB_CLIENT_ID=<your client id>
 #    GITHUB_CLIENT_SECRET=<your client secret>
-#    SESSION_SECRET=$(openssl rand -base64 32)
 #    ENCRYPTION_KEY=$(openssl rand -hex 32)
 
 # 3. Build and start
