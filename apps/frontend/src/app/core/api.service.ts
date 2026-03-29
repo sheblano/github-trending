@@ -102,12 +102,24 @@ export class ApiService {
     return this.http.delete<{ ok: boolean }>(`/api/repos/star/${owner}/${name}`);
   }
 
-  getStarred(): Observable<{ starred: FollowedRepoDto[] }> {
-    return this.http.get<{ starred: FollowedRepoDto[] }>('/api/repos/starred');
+  getStarred(page = 1, perPage = 20): Observable<{ starred: FollowedRepoDto[]; totalCount: number; page: number; perPage: number }> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('perPage', String(perPage));
+    return this.http.get<{ starred: FollowedRepoDto[]; totalCount: number; page: number; perPage: number }>(
+      '/api/repos/starred',
+      { params }
+    );
   }
 
-  getReleases(): Observable<ReleaseFeedResponse> {
-    return this.http.get<ReleaseFeedResponse>('/api/releases');
+  getReleases(page = 1, perPage = 10): Observable<ReleaseFeedResponse & { totalCount: number; page: number; perPage: number }> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('perPage', String(perPage));
+    return this.http.get<ReleaseFeedResponse & { totalCount: number; page: number; perPage: number }>(
+      '/api/releases',
+      { params }
+    );
   }
 
   updateNotes(repoId: number, notes: string | null): Observable<{ repo: FollowedRepoDto }> {

@@ -100,12 +100,14 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
     h1 {
       margin: 0 0 8px;
       font-size: 1.5rem;
+      color: var(--mat-sys-on-surface);
     }
     .subtitle {
       margin: 0 0 16px;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--mat-sys-on-surface-variant);
       font-size: 14px;
       max-width: 640px;
+      line-height: 1.5;
     }
     .filters {
       display: flex;
@@ -127,32 +129,32 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
       align-items: center;
       justify-content: center;
       padding: 48px 16px;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--mat-sys-on-surface-variant);
     }
     .empty mat-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
       margin-bottom: 8px;
-      opacity: 0.4;
+      opacity: 0.5;
     }
     .event-list {
       list-style: none;
       margin: 0;
       padding: 0;
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      border-top: 1px solid var(--mat-sys-outline-variant);
     }
     .event-item {
       display: flex;
       gap: 12px;
       padding: 16px 0;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
     .event-icon-wrap {
       flex-shrink: 0;
     }
     .event-icon {
-      color: #5e35b1;
+      color: var(--mat-sys-primary);
     }
     .event-body {
       min-width: 0;
@@ -168,17 +170,18 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
     .event-title {
       font-weight: 600;
       font-size: 15px;
+      color: var(--mat-sys-on-surface);
     }
     .event-time {
       font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--mat-sys-on-surface-variant);
       white-space: nowrap;
     }
     .repo-link {
       display: inline-block;
       margin-top: 4px;
       font-size: 13px;
-      color: #1565c0;
+      color: var(--mat-sys-primary);
       text-decoration: none;
     }
     .repo-link:hover {
@@ -187,12 +190,14 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
     .event-desc {
       margin: 8px 0 0;
       font-size: 13px;
-      color: rgba(0, 0, 0, 0.7);
+      color: var(--mat-sys-on-surface-variant);
+      line-height: 1.45;
     }
     .event-url {
       display: inline-block;
       margin-top: 6px;
       font-size: 12px;
+      color: var(--mat-sys-primary);
     }
   `,
 })

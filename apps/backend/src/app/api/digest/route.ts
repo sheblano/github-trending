@@ -17,26 +17,26 @@ export async function GET() {
   }
 
   const token = decrypt(user.accessTokenEnc);
+  const threshold = user.lastDigestSeenAt ?? new Date(0);
 
   const followedRepos = await prisma.followedRepo.findMany({
     where: { userId },
+    select: { id: true, language: true },
   });
 
-  const threshold = user.lastDigestSeenAt ?? new Date(0);
+  // Single query instead of one per repo: count repos that have at least one
+  // unseen release using a grouped aggregate.
+  const unseenGroups = await prisma.releaseCache.groupBy({
+    by: ['repoId'],
+    where: {
+      repoId: { in: followedRepos.map((r) => r.id) },
+      publishedAt: { gt: threshold },
+    },
+    _count: { repoId: true },
+  });
+  const newReleaseCount = unseenGroups.length;
 
-  let newReleaseCount = 0;
-  for (const repo of followedRepos) {
-    const hasNew = await prisma.releaseCache.findFirst({
-      where: {
-        repoId: repo.id,
-        publishedAt: { gt: threshold },
-      },
-    });
-    if (hasNew) {
-      newReleaseCount++;
-    }
-  }
-
+  // Determine the user's top languages from followed repos.
   const langCounts = new Map<string, number>();
   for (const r of followedRepos) {
     if (r.language) {
@@ -48,55 +48,57 @@ export async function GET() {
     .slice(0, 3)
     .map(([lang]) => lang);
 
+  const langsToSearch = topLangs.length > 0 ? topLangs : ['TypeScript', 'Python', 'Go'];
+
+  // Fetch trending repos for all languages in parallel instead of sequentially.
+  const perLangResults = await Promise.all(
+    langsToSearch.map(async (lang) => {
+      const query = buildSearchQuery({
+        language: lang,
+        topics: [],
+        dateRange: 'weekly',
+        searchQuery: '',
+      });
+      try {
+        const result = await searchRepositories({
+          query,
+          sort: mapSortField('stars'),
+          order: 'desc',
+          page: 1,
+          perPage: 5,
+          token,
+        });
+        return result.items;
+      } catch {
+        return [];
+      }
+    })
+  );
+
   const seenIds = new Set<number>();
   const trendingInYourLangs: DigestResponse['trendingInYourLangs'] = [];
-
-  const langsToSearch =
-    topLangs.length > 0 ? topLangs : ['TypeScript', 'Python', 'Go'];
-
-  for (const lang of langsToSearch) {
-    if (trendingInYourLangs.length >= 10) break;
-    const query = buildSearchQuery({
-      language: lang,
-      topics: [],
-      dateRange: 'weekly',
-      searchQuery: '',
-    });
-    try {
-      const result = await searchRepositories({
-        query,
-        sort: mapSortField('stars'),
-        order: 'desc',
-        page: 1,
-        perPage: 5,
-        token,
+  for (const items of perLangResults) {
+    for (const item of items) {
+      if (trendingInYourLangs.length >= 10) break;
+      if (seenIds.has(item.id)) continue;
+      seenIds.add(item.id);
+      trendingInYourLangs.push({
+        id: item.id,
+        fullName: item.full_name,
+        description: item.description,
+        language: item.language,
+        stars: item.stargazers_count,
+        url: item.html_url,
       });
-      for (const item of result.items) {
-        if (seenIds.has(item.id)) continue;
-        seenIds.add(item.id);
-        trendingInYourLangs.push({
-          id: item.id,
-          fullName: item.full_name,
-          description: item.description,
-          language: item.language,
-          stars: item.stargazers_count,
-          url: item.html_url,
-        });
-        if (trendingInYourLangs.length >= 10) break;
-      }
-    } catch {
-      // skip language on error
     }
+    if (trendingInYourLangs.length >= 10) break;
   }
 
-  const hasUnseen =
-    newReleaseCount > 0 || user.lastDigestSeenAt === null;
+  const hasUnseen = newReleaseCount > 0 || user.lastDigestSeenAt === null;
 
-  const body: DigestResponse = {
+  return NextResponse.json({
     newReleaseCount,
     trendingInYourLangs,
     hasUnseen,
-  };
-
-  return NextResponse.json(body);
+  } satisfies DigestResponse);
 }
