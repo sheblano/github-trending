@@ -125,10 +125,6 @@ Filter by repo name or event type. Events are derived from throttled snapshots r
 
 > **First-run note:** The timeline will be empty on a fresh install. Events accumulate automatically as you (or anyone) browse the Trending page over time. Each visit records a snapshot; the next visit an hour later compares it and emits events. Give it a day of normal use and it will start filling up.
 
-### 📱 Progressive Web App
-
-Installable as a PWA with an offline-capable shell via Angular Service Worker.
-
 ### 📐 Responsive design
 
 Full **mobile-first** layout: bottom tab navigation on small screens, scrollable chip rows, stacked controls, and a single-column repo grid.
