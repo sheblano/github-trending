@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { getSessionUserId, decrypt } from '@github-trending/server/auth';
+import { getAuthenticatedUserId, decrypt } from '@github-trending/server/auth';
 import { starRepo } from '@github-trending/server/github-client';
 import type { StarRequest } from '@github-trending/shared/models';
 
 export async function POST(request: Request) {
-  const userId = await getSessionUserId(prisma);
+  const userId = await getAuthenticatedUserId(prisma);
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

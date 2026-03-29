@@ -108,6 +108,50 @@ export interface TimelineResponse {
   events: TimelineEventDto[];
 }
 
+/** Galaxy / scatter discovery view (from GET /api/repos/discovery). */
+export interface GalaxyDiscoveryNodeDto {
+  id: number;
+  fullName: string;
+  owner: string;
+  name: string;
+  htmlUrl: string;
+  description: string | null;
+  language: string | null;
+  stargazersCount: number;
+  x: number;
+  y: number;
+  sizeNorm: number;
+  colorGroup: string;
+  watchScore?: number;
+  radarScore?: number;
+  radarHot: boolean;
+  visualReasons: string[];
+}
+
+export interface DiscoveryResponse {
+  nodes: GalaxyDiscoveryNodeDto[];
+  totalCount: number;
+  page: number;
+  perPage: number;
+}
+
+export interface HotSnapshotDto {
+  githubRepoId: number;
+  fullName: string;
+  owner: string;
+  name: string;
+  starsCount: number;
+  radarScore: number | null;
+  capturedAt: string;
+}
+
+export interface TopMoversResponse {
+  starSpikes: TimelineEventDto[];
+  enteredRadar: TimelineEventDto[];
+  releasePublished: TimelineEventDto[];
+  hotNow: HotSnapshotDto[];
+}
+
 export interface ApiError {
   message: string;
   statusCode: number;

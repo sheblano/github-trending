@@ -8,8 +8,8 @@ datasource db {
 }
 
 model User {
-  id               Int            @id @default(autoincrement())
-  githubId         Int            @unique
+  id               Int              @id @default(autoincrement())
+  githubId         Int              @unique
   username         String
   avatarUrl        String?
   accessTokenEnc   String
@@ -17,8 +17,23 @@ model User {
   sessions         Session[]
   followedRepos    FollowedRepo[]
   filterPresets    FilterPreset[]
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  apiAccessTokens  ApiAccessToken[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+/// Long-lived tokens for scripts / OpenClaw (hashed at rest). Create via POST /api/agent-tokens while signed in.
+model ApiAccessToken {
+  id         String    @id @default(cuid())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  label      String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  @@index([userId])
 }
 
 model Session {

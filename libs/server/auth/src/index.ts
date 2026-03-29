@@ -5,3 +5,8 @@ export {
   getSessionUserId,
   invalidateSession,
 } from './lib/session';
+export {
+  getAuthenticatedUserId,
+  hashApiTokenPlain,
+  generateAgentTokenPlain,
+} from './lib/authenticated-user';

@@ -29,6 +29,16 @@ export const appRoutes: Route[] = [
             (m) => m.TimelineComponent
           ),
       },
+      {
+        path: 'galaxy',
+        loadComponent: () =>
+          import('./features/galaxy/galaxy.component').then((m) => m.GalaxyComponent),
+      },
+      {
+        path: 'movers',
+        loadComponent: () =>
+          import('./features/movers/movers.component').then((m) => m.MoversComponent),
+      },
       { path: '', redirectTo: 'trending', pathMatch: 'full' },
     ],
   },

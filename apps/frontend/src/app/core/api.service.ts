@@ -12,6 +12,8 @@ import type {
   DigestResponse,
   TimelineResponse,
   TrendingViewMode,
+  DiscoveryResponse,
+  TopMoversResponse,
 } from '@github-trending/shared/models';
 
 @Injectable({ providedIn: 'root' })
@@ -50,6 +52,32 @@ export class ApiService {
       params = params.set('viewMode', filters.viewMode);
     }
     return this.http.get<TrendingResponse>('/api/repos/trending', { params });
+  }
+
+  getDiscovery(filters: {
+    language?: string | null;
+    topics?: string[];
+    dateRange?: string;
+    q?: string;
+    sort?: string;
+    order?: string;
+    page?: number;
+    perPage?: number;
+  }): Observable<DiscoveryResponse> {
+    let params = new HttpParams();
+    if (filters.language) params = params.set('language', filters.language);
+    if (filters.topics?.length) params = params.set('topics', filters.topics.join(','));
+    if (filters.dateRange) params = params.set('dateRange', filters.dateRange);
+    if (filters.q) params = params.set('q', filters.q);
+    if (filters.sort) params = params.set('sort', filters.sort);
+    if (filters.order) params = params.set('order', filters.order);
+    if (filters.page) params = params.set('page', String(filters.page));
+    if (filters.perPage) params = params.set('perPage', String(filters.perPage));
+    return this.http.get<DiscoveryResponse>('/api/repos/discovery', { params });
+  }
+
+  getMovers(): Observable<TopMoversResponse> {
+    return this.http.get<TopMoversResponse>('/api/movers');
   }
 
   getTimeline(filters?: {
