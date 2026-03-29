@@ -11,7 +11,6 @@ import {
 } from '@github-trending/server/auth';
 
 export async function GET(request: Request) {
-  console.log('[AUTH] GET /api/auth/callback hit');
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const stateParam = searchParams.get('state');
@@ -61,7 +60,6 @@ export async function GET(request: Request) {
 
     const appUrl = process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:4200';
     const redirectTo = `${appUrl}${returnUrl}`;
-    console.log('[AUTH] Login successful for user:', ghUser.login, '→ redirecting to:', redirectTo);
     const response = NextResponse.redirect(redirectTo);
     setSessionCookieOnResponse(response, sessionId);
     return response;

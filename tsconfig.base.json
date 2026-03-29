@@ -23,6 +23,12 @@
       "@github-trending/server/auth": ["libs/server/auth/src/index.ts"],
       "@github-trending/server/repo-sync": [
         "libs/server/repo-sync/src/index.ts"
+      ],
+      "@github-trending/server/repo-scoring": [
+        "libs/server/repo-scoring/src/index.ts"
+      ],
+      "@github-trending/server/timeline": [
+        "libs/server/timeline/src/index.ts"
       ]
     }
   },

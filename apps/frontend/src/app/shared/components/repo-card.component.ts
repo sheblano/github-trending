@@ -34,7 +34,11 @@ import { SparklineComponent } from './sparkline.component';
     SparklineComponent,
   ],
   template: `
-    <mat-card class="repo-card" [class.archived]="repo().archived">
+    <mat-card
+      class="repo-card"
+      [class.archived]="repo().archived"
+      [class.radar-hot]="radarMode() && (repo().radarScore ?? 0) >= 72"
+    >
       <mat-card-header>
         <img
           mat-card-avatar
@@ -54,6 +58,19 @@ import { SparklineComponent } from './sparkline.component';
 
       <mat-card-content>
         <div class="meta-row">
+          @if (repo().watchScore != null) {
+            <span class="watch-score" [matTooltip]="watchReasonsTooltip()">
+              {{ repo().watchScore }}
+            </span>
+            <mat-chip [class]="'watch-label-chip ' + watchLabelClass()">
+              {{ watchLabelDisplay() }}
+            </mat-chip>
+          }
+          @if (radarMode() && repo().radarRank != null) {
+            <mat-chip class="radar-rank-chip" matTooltip="Radar rank (this page)">
+              #{{ repo().radarRank }}
+            </mat-chip>
+          }
           @if (repo().language) {
             <mat-chip class="lang-chip">{{ repo().language }}</mat-chip>
           }
@@ -87,6 +104,11 @@ import { SparklineComponent } from './sparkline.component';
         </div>
 
         <div class="health-row">
+          @if (radarMode() && (repo().radarReasons?.length ?? 0) > 0) {
+            <mat-chip class="radar-reason-chip" [matTooltip]="radarReasonsTooltip()">
+              {{ repo().radarReasons![0] }}
+            </mat-chip>
+          }
           <mat-chip
             [class]="'health-' + commitRecency()"
             class="health-chip"
@@ -159,6 +181,61 @@ import { SparklineComponent } from './sparkline.component';
 
     .repo-card.archived {
       opacity: 0.7;
+    }
+
+    .repo-card.radar-hot {
+      border: 2px solid #7b1fa2;
+      box-shadow: 0 0 0 1px rgba(123, 31, 162, 0.25);
+    }
+
+    .watch-score {
+      font-weight: 700;
+      font-size: 13px;
+      min-width: 28px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(25, 118, 210, 0.12);
+      color: #1565c0;
+    }
+
+    .watch-label-chip {
+      font-size: 11px;
+      min-height: 24px;
+      padding: 0 8px;
+    }
+
+    .watch-label-strong {
+      background-color: #c8e6c9 !important;
+      color: #1b5e20;
+    }
+    .watch-label-watch {
+      background-color: #e3f2fd !important;
+      color: #0d47a1;
+    }
+    .watch-label-cooling {
+      background-color: #fff3e0 !important;
+      color: #e65100;
+    }
+    .watch-label-risky {
+      background-color: #ffcdd2 !important;
+      color: #b71c1c;
+    }
+
+    .radar-rank-chip {
+      font-size: 11px;
+      min-height: 24px;
+      font-weight: 600;
+      background: #f3e5f5 !important;
+      color: #6a1b9a;
+    }
+
+    .radar-reason-chip {
+      font-size: 11px;
+      min-height: 24px;
+      max-width: 200px;
+      background: #ede7f6 !important;
+      color: #4527a0;
     }
 
     .owner-avatar {
@@ -255,6 +332,8 @@ import { SparklineComponent } from './sparkline.component';
 export class RepoCardComponent implements AfterViewInit {
   repo = input.required<GitHubRepo>();
   isStarred = input(false);
+  /** Emphasize radar rank and reasons when trending is in radar view. */
+  radarMode = input(false);
   starToggle = output<void>();
   previewClick = output<void>();
 
@@ -271,6 +350,34 @@ export class RepoCardComponent implements AfterViewInit {
 
   commitRecency() {
     return getCommitRecency(this.repo().pushed_at);
+  }
+
+  watchReasonsTooltip(): string {
+    const r = this.repo().watchReasons;
+    return r?.length ? r.join(' · ') : 'Watchlist confidence';
+  }
+
+  radarReasonsTooltip(): string {
+    const r = this.repo().radarReasons;
+    return r?.length ? r.join(' · ') : 'Radar signals';
+  }
+
+  watchLabelClass(): string {
+    const l = this.repo().watchLabel;
+    if (!l) return '';
+    return `watch-label-${l}`;
+  }
+
+  watchLabelDisplay(): string {
+    const l = this.repo().watchLabel;
+    if (!l) return '';
+    const map: Record<string, string> = {
+      strong: 'Strong',
+      watch: 'Watch',
+      cooling: 'Cooling',
+      risky: 'Risky',
+    };
+    return map[l] ?? l;
   }
 
   ngAfterViewInit() {

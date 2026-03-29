@@ -50,6 +50,10 @@ import { DigestStore } from '../../store/digest.store';
             <mat-icon>star</mat-icon>
             Starred
           </a>
+          <a mat-button routerLink="/timeline" routerLinkActive="active-link">
+            <mat-icon>timeline</mat-icon>
+            Timeline
+          </a>
         </nav>
       }
 
@@ -153,6 +157,15 @@ import { DigestStore } from '../../store/digest.store';
         >
           <mat-icon>star</mat-icon>
           <span>Starred</span>
+        </a>
+        <a
+          mat-button
+          routerLink="/timeline"
+          routerLinkActive="active-link"
+          class="bottom-nav-item"
+        >
+          <mat-icon>timeline</mat-icon>
+          <span>Timeline</span>
         </a>
       </nav>
     }

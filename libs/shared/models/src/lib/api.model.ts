@@ -29,11 +29,14 @@ export interface DigestResponse {
   hasUnseen: boolean;
 }
 
+export type TrendingViewMode = 'default' | 'radar';
+
 export interface TrendingResponse {
   repos: GitHubRepo[];
   totalCount: number;
   page: number;
   perPage: number;
+  viewMode?: TrendingViewMode;
 }
 
 export interface FollowedRepoDto {
@@ -85,6 +88,24 @@ export interface StarHistoryResponse {
   owner: string;
   name: string;
   history: StarHistoryPoint[];
+}
+
+export interface TimelineEventDto {
+  id: number;
+  githubRepoId: number;
+  owner: string;
+  name: string;
+  fullName: string;
+  eventType: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  eventAt: string;
+  meta?: Record<string, unknown> | null;
+}
+
+export interface TimelineResponse {
+  events: TimelineEventDto[];
 }
 
 export interface ApiError {

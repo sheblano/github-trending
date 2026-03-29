@@ -103,7 +103,20 @@ export async function syncReleasesForRepo(
 
   if (response.notModified) return;
 
+  const followed = await prisma.followedRepo.findUnique({
+    where: { id: followedRepoId },
+  });
+
   for (const release of response.data) {
+    const existing = await prisma.releaseCache.findUnique({
+      where: {
+        repoId_tagName: {
+          repoId: followedRepoId,
+          tagName: release.tag_name,
+        },
+      },
+    });
+
     await prisma.releaseCache.upsert({
       where: {
         repoId_tagName: {
@@ -132,5 +145,26 @@ export async function syncReleasesForRepo(
         fetchedAt: new Date(),
       },
     });
+
+    if (
+      !existing &&
+      followed &&
+      release.published_at
+    ) {
+      await prisma.timelineEvent.create({
+        data: {
+          githubRepoId: followed.githubRepoId,
+          owner: followed.owner,
+          name: followed.name,
+          fullName: followed.fullName,
+          eventType: 'release_published',
+          title: `Release ${release.tag_name}`,
+          description: release.name ?? release.tag_name,
+          url: release.html_url,
+          eventAt: new Date(release.published_at),
+          meta: { tagName: release.tag_name },
+        },
+      });
+    }
   }
 }

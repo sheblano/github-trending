@@ -39,6 +39,7 @@ import type {
   SortOrder,
   GitHubRepo,
   TrendingFilterPresetDto,
+  TrendingViewMode,
 } from '@github-trending/shared/models';
 
 @Component({
@@ -179,6 +180,15 @@ import type {
             {{ store.order() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
           </mat-icon>
         </button>
+
+        <mat-button-toggle-group
+          [value]="store.viewMode()"
+          (change)="setViewMode($event.value)"
+          matTooltip="Default uses GitHub sort; Radar ranks by momentum and health signals"
+        >
+          <mat-button-toggle value="default">Default</mat-button-toggle>
+          <mat-button-toggle value="radar">Radar</mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
     </div>
 
@@ -188,6 +198,7 @@ import type {
           <app-repo-card
             [repo]="repo"
             [isStarred]="store.starredRepoIds().has(repo.id)"
+            [radarMode]="store.viewMode() === 'radar'"
             (starToggle)="toggleStar(repo)"
             (previewClick)="readmeDrawer.openRepo(repo)"
           />
@@ -457,6 +468,12 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scrollTrendingTop();
     const newOrder: SortOrder = this.store.order() === 'desc' ? 'asc' : 'desc';
     this.store.setSort(this.store.sortBy(), newOrder);
+    this.store.loadRepos();
+  }
+
+  setViewMode(mode: TrendingViewMode) {
+    this.scrollTrendingTop();
+    this.store.setViewMode(mode);
     this.store.loadRepos();
   }
 

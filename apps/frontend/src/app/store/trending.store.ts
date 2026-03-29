@@ -12,6 +12,7 @@ import type {
   DateRange,
   RepoSortField,
   SortOrder,
+  TrendingViewMode,
 } from '@github-trending/shared/models';
 
 interface TrendingStateModel {
@@ -25,6 +26,7 @@ interface TrendingStateModel {
   order: SortOrder;
   page: number;
   perPage: number;
+  viewMode: TrendingViewMode;
   loading: boolean;
   loadingMore: boolean;
   starredRepoIds: Set<number>;
@@ -41,6 +43,7 @@ const initialState: TrendingStateModel = {
   order: 'desc',
   page: 1,
   perPage: 30,
+  viewMode: 'default',
   loading: false,
   loadingMore: false,
   starredRepoIds: new Set(),
@@ -65,6 +68,7 @@ export const TrendingStore = signalStore(
       sort: store.sortBy(),
       order: store.order(),
       perPage: store.perPage(),
+      viewMode: store.viewMode(),
     });
     return {
       async loadRepos() {
@@ -134,6 +138,9 @@ export const TrendingStore = signalStore(
       },
       setSort(sortBy: RepoSortField, order: SortOrder) {
         patchState(store, { sortBy, order, page: 1 });
+      },
+      setViewMode(viewMode: TrendingViewMode) {
+        patchState(store, { viewMode, page: 1 });
       },
       setPage(page: number) {
         patchState(store, { page });

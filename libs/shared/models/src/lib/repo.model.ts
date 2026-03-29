@@ -21,6 +21,14 @@ export interface GitHubRepo {
     name: string;
   } | null;
   archived: boolean;
+  /** Watchlist confidence (from trending/radar scoring). */
+  watchScore?: number;
+  watchLabel?: 'strong' | 'watch' | 'cooling' | 'risky';
+  watchReasons?: string[];
+  /** Radar ranking signal (0–100). */
+  radarScore?: number;
+  radarRank?: number;
+  radarReasons?: string[];
 }
 
 export interface RepoSearchResult {

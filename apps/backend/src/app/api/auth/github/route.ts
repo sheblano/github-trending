@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  console.log('[AUTH] GET /api/auth/github hit');
   const { searchParams } = new URL(request.url);
   const returnUrl = searchParams.get('returnUrl') || '/trending';
 
@@ -25,6 +24,5 @@ export async function GET(request: Request) {
   });
 
   const redirectUrl = `https://github.com/login/oauth/authorize?${params}`;
-  console.log('[AUTH] Redirecting to GitHub OAuth, callback:', callbackUrl);
   return NextResponse.redirect(redirectUrl);
 }

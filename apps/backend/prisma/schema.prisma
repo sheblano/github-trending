@@ -84,3 +84,36 @@ model StarHistoryCache {
 
   @@unique([owner, name])
 }
+
+model RepoSnapshot {
+  id           Int       @id @default(autoincrement())
+  githubRepoId Int
+  owner        String
+  name         String
+  fullName     String
+  starsCount   Int
+  forksCount   Int
+  openIssues   Int
+  radarScore   Int?
+  pushedAt     DateTime?
+  capturedAt   DateTime  @default(now())
+
+  @@index([githubRepoId, capturedAt(sort: Desc)])
+}
+
+model TimelineEvent {
+  id           Int      @id @default(autoincrement())
+  githubRepoId Int
+  owner        String
+  name         String
+  fullName     String
+  eventType    String
+  title        String
+  description  String?
+  url          String?
+  eventAt      DateTime
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  @@index([eventAt(sort: Desc)])
+}

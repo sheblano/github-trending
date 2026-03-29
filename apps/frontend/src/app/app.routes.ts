@@ -22,6 +22,13 @@ export const appRoutes: Route[] = [
           ),
         canActivate: [authGuard],
       },
+      {
+        path: 'timeline',
+        loadComponent: () =>
+          import('./features/timeline/timeline.component').then(
+            (m) => m.TimelineComponent
+          ),
+      },
       { path: '', redirectTo: 'trending', pathMatch: 'full' },
     ],
   },

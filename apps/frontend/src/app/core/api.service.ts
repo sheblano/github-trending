@@ -10,6 +10,8 @@ import type {
   TrendingFilterPresetDto,
   TrendingFiltersSnapshot,
   DigestResponse,
+  TimelineResponse,
+  TrendingViewMode,
 } from '@github-trending/shared/models';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +35,7 @@ export class ApiService {
     order?: string;
     page?: number;
     perPage?: number;
+    viewMode?: TrendingViewMode;
   }): Observable<TrendingResponse> {
     let params = new HttpParams();
     if (filters.language) params = params.set('language', filters.language);
@@ -43,7 +46,24 @@ export class ApiService {
     if (filters.order) params = params.set('order', filters.order);
     if (filters.page) params = params.set('page', String(filters.page));
     if (filters.perPage) params = params.set('perPage', String(filters.perPage));
+    if (filters.viewMode && filters.viewMode !== 'default') {
+      params = params.set('viewMode', filters.viewMode);
+    }
     return this.http.get<TrendingResponse>('/api/repos/trending', { params });
+  }
+
+  getTimeline(filters?: {
+    repo?: string;
+    eventType?: string;
+    since?: string;
+    limit?: number;
+  }): Observable<TimelineResponse> {
+    let params = new HttpParams();
+    if (filters?.repo) params = params.set('repo', filters.repo);
+    if (filters?.eventType) params = params.set('eventType', filters.eventType);
+    if (filters?.since) params = params.set('since', filters.since);
+    if (filters?.limit != null) params = params.set('limit', String(filters.limit));
+    return this.http.get<TimelineResponse>('/api/timeline', { params });
   }
 
   starRepo(data: StarRequest): Observable<{ followed: FollowedRepoDto }> {

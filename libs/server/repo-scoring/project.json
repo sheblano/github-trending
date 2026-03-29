@@ -1,0 +1,7 @@
+{
+  "name": "server-repo-scoring",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/server/repo-scoring/src",
+  "projectType": "library",
+  "tags": []
+}
