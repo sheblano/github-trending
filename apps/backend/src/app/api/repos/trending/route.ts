@@ -1,59 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { searchRepositories } from '@github-trending/server/github-client';
-import { getSessionUserId, decrypt } from '@github-trending/server/auth';
-import { scoreRepo } from '@github-trending/server/repo-scoring';
+import { fetchEnrichedRepos } from '../../../../lib/trending-enrich';
+import { getAuthenticatedUserId, decrypt } from '@github-trending/server/auth';
 import { recordTrendingSnapshotsIfDue } from '@github-trending/server/timeline';
-import { buildSearchQuery, mapSortField } from '@github-trending/shared/utils';
 import type {
   DateRange,
   GitHubRepo,
   RepoSortField,
   SortOrder,
-  StarHistoryPoint,
   TrendingViewMode,
 } from '@github-trending/shared/models';
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
-
-async function loadStarHistoryMap(
-  repos: GitHubRepo[]
-): Promise<Map<string, StarHistoryPoint[]>> {
-  if (repos.length === 0) return new Map();
-  const rows = await prisma.starHistoryCache.findMany({
-    where: {
-      OR: repos.map((r) => ({
-        owner: r.owner.login,
-        name: r.name,
-      })),
-    },
-  });
-  const m = new Map<string, StarHistoryPoint[]>();
-  for (const row of rows) {
-    const key = `${row.owner}/${row.name}`;
-    const raw = row.data as unknown;
-    if (Array.isArray(raw)) {
-      m.set(key, raw as StarHistoryPoint[]);
-    }
-  }
-  return m;
-}
-
-function enrichRepo(
-  repo: GitHubRepo,
-  history: StarHistoryPoint[] | undefined
-): GitHubRepo {
-  const scored = scoreRepo(repo, { starHistory: history });
-  return {
-    ...repo,
-    watchScore: scored.watchScore,
-    watchLabel: scored.watchLabel,
-    watchReasons: scored.watchReasons,
-    radarScore: scored.radarScore,
-    radarReasons: scored.radarReasons,
-  };
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -71,11 +30,8 @@ export async function GET(request: Request) {
     ? 'radar'
     : 'default') as TrendingViewMode;
 
-  const query = buildSearchQuery({ language, topics, dateRange, searchQuery });
-  const sort = mapSortField(sortBy);
-
   let token: string | undefined;
-  const userId = await getSessionUserId(prisma);
+  const userId = await getAuthenticatedUserId(prisma);
   if (userId) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user) {
@@ -83,7 +39,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const cacheKey = `${query}:${sort}:${order}:${page}:${perPage}:${viewMode}`;
+  const cacheKey = `${language}:${topics.join(',')}:${dateRange}:${searchQuery}:${sortBy}:${order}:${page}:${perPage}:${viewMode}`;
   if (!token) {
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -91,21 +47,20 @@ export async function GET(request: Request) {
     }
   }
 
-  const result = await searchRepositories({
-    query,
-    sort,
+  const { repos: enriched, totalCount } = await fetchEnrichedRepos({
+    prisma,
+    language,
+    topics,
+    dateRange,
+    searchQuery,
+    sortBy,
     order,
     page,
     perPage,
     token,
   });
 
-  const historyMap = await loadStarHistoryMap(result.items);
-  let repos: GitHubRepo[] = result.items.map((repo) => {
-    const key = `${repo.owner.login}/${repo.name}`;
-    return enrichRepo(repo, historyMap.get(key));
-  });
-
+  let repos: GitHubRepo[] = enriched;
   if (viewMode === 'radar') {
     repos = [...repos].sort((a, b) => {
       const rb = b.radarScore ?? 0;
@@ -118,7 +73,7 @@ export async function GET(request: Request) {
 
   const response = {
     repos,
-    totalCount: result.total_count,
+    totalCount,
     page,
     perPage,
     viewMode,

@@ -127,7 +127,7 @@ export function scoreRepo(
     watchLabel = 'watch';
   } else if (watchScore >= 36) {
     watchLabel = 'cooling';
-    reasons.unshift('Mixed signals — verify before depending on it');
+    reasons.unshift('Mixed signals, verify before depending on it');
   } else {
     watchLabel = 'risky';
     reasons.unshift('Weak signals or elevated risk');

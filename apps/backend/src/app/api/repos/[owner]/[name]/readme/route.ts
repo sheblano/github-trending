@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
-import { getSessionUserId, decrypt } from '@github-trending/server/auth';
+import { getAuthenticatedUserId, decrypt } from '@github-trending/server/auth';
 import { getRepoReadmeHtml } from '@github-trending/server/github-client';
 
 const cache = new Map<string, { html: string; timestamp: number }>();
@@ -19,7 +19,7 @@ export async function GET(
   }
 
   let token: string | undefined;
-  const userId = await getSessionUserId(prisma);
+  const userId = await getAuthenticatedUserId(prisma);
   if (userId) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (user) {

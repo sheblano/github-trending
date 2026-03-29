@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../../lib/prisma';
-import { getSessionUserId, decrypt } from '@github-trending/server/auth';
+import { getAuthenticatedUserId, decrypt } from '@github-trending/server/auth';
 import {
   getRepoPublicInfo,
   getStargazersPage,
@@ -54,7 +54,7 @@ export async function GET(
 ) {
   const { owner, name } = await params;
 
-  const userId = await getSessionUserId(prisma);
+  const userId = await getAuthenticatedUserId(prisma);
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

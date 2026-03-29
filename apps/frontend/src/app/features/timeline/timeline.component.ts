@@ -26,8 +26,8 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
     <div class="timeline-header">
       <h1>Timeline</h1>
       <p class="subtitle">
-        Chronological signals: releases from your starred repos, star spikes, and radar entries
-        captured while trending loads.
+        Signals captured across all trending repos: star spikes, radar entries, and new releases.
+        These are not filtered to your starred repos; they reflect activity across everything currently trending.
       </p>
 
       <div class="filters">

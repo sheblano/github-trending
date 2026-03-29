@@ -1,10 +1,27 @@
 @use '@angular/material' as mat;
 
-html {
+// Light theme (toggle)
+html.theme-light {
+  color-scheme: light;
   @include mat.theme((
     color: (
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
+      primary: mat.$violet-palette,
+      tertiary: mat.$cyan-palette,
+      theme-type: light,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+// Default / dark polished theme
+html.theme-dark {
+  color-scheme: dark;
+  @include mat.theme((
+    color: (
+      primary: mat.$violet-palette,
+      tertiary: mat.$cyan-palette,
+      theme-type: dark,
     ),
     typography: Roboto,
     density: 0,
@@ -19,7 +36,15 @@ body {
 }
 
 body {
-  background-color: #fafafa;
+  background-color: var(--mat-sys-surface, #fafafa);
+  color: var(--mat-sys-on-surface, rgba(0, 0, 0, 0.87));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.theme-dark body {
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(124, 77, 255, 0.18), transparent),
+    radial-gradient(900px 500px at 90% 0%, rgba(0, 176, 255, 0.12), transparent),
+    var(--mat-sys-surface, #121212);
 }
 
 a {
@@ -38,4 +63,12 @@ a {
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
+}
+
+html.theme-dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.app-shell-wide {
+  max-width: 1400px !important;
 }

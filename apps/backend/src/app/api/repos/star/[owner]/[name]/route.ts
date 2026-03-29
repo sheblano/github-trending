@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../../../lib/prisma';
-import { getSessionUserId, decrypt } from '@github-trending/server/auth';
+import { getAuthenticatedUserId, decrypt } from '@github-trending/server/auth';
 import { unstarRepo } from '@github-trending/server/github-client';
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ owner: string; name: string }> }
 ) {
-  const userId = await getSessionUserId(prisma);
+  const userId = await getAuthenticatedUserId(prisma);
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

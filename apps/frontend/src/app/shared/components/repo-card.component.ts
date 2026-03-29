@@ -195,8 +195,8 @@ import { SparklineComponent } from './sparkline.component';
       text-align: center;
       padding: 2px 8px;
       border-radius: 6px;
-      background: rgba(25, 118, 210, 0.12);
-      color: #1565c0;
+      background: color-mix(in srgb, var(--mat-sys-primary, #1976d2) 14%, var(--mat-sys-surface, #fff));
+      color: var(--mat-sys-primary, #1565c0);
     }
 
     .watch-label-chip {
@@ -206,36 +206,36 @@ import { SparklineComponent } from './sparkline.component';
     }
 
     .watch-label-strong {
-      background-color: #c8e6c9 !important;
-      color: #1b5e20;
+      background-color: color-mix(in srgb, #4caf50 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #1b5e20 90%, var(--mat-sys-on-surface, #000));
     }
     .watch-label-watch {
-      background-color: #e3f2fd !important;
-      color: #0d47a1;
+      background-color: color-mix(in srgb, #2196f3 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #0d47a1 90%, var(--mat-sys-on-surface, #000));
     }
     .watch-label-cooling {
-      background-color: #fff3e0 !important;
-      color: #e65100;
+      background-color: color-mix(in srgb, #ff9800 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #e65100 90%, var(--mat-sys-on-surface, #000));
     }
     .watch-label-risky {
-      background-color: #ffcdd2 !important;
-      color: #b71c1c;
+      background-color: color-mix(in srgb, #f44336 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #b71c1c 90%, var(--mat-sys-on-surface, #000));
     }
 
     .radar-rank-chip {
       font-size: 11px;
       min-height: 24px;
       font-weight: 600;
-      background: #f3e5f5 !important;
-      color: #6a1b9a;
+      background: color-mix(in srgb, #9c27b0 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #6a1b9a 90%, var(--mat-sys-on-surface, #000));
     }
 
     .radar-reason-chip {
       font-size: 11px;
       min-height: 24px;
       max-width: 200px;
-      background: #ede7f6 !important;
-      color: #4527a0;
+      background: color-mix(in srgb, #7c4dff 14%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #4527a0 90%, var(--mat-sys-on-surface, #000));
     }
 
     .owner-avatar {
@@ -274,7 +274,7 @@ import { SparklineComponent } from './sparkline.component';
       align-items: center;
       gap: 2px;
       font-size: 13px;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
     }
 
     .stat-icon {
@@ -295,31 +295,31 @@ import { SparklineComponent } from './sparkline.component';
     }
 
     .health-healthy {
-      background-color: #c8e6c9 !important;
-      color: #2e7d32;
+      background-color: color-mix(in srgb, #4caf50 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #2e7d32 90%, var(--mat-sys-on-surface, #000));
     }
     .health-warning {
-      background-color: #fff3e0 !important;
-      color: #e65100;
+      background-color: color-mix(in srgb, #ff9800 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #e65100 90%, var(--mat-sys-on-surface, #000));
     }
     .health-stale {
-      background-color: #ffcdd2 !important;
-      color: #c62828;
+      background-color: color-mix(in srgb, #f44336 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #c62828 90%, var(--mat-sys-on-surface, #000));
     }
 
     .no-license-chip {
-      background-color: #fff3e0 !important;
-      color: #e65100;
+      background-color: color-mix(in srgb, #ff9800 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #e65100 90%, var(--mat-sys-on-surface, #000));
     }
 
     .archived-chip {
-      background-color: #ffcdd2 !important;
-      color: #c62828;
+      background-color: color-mix(in srgb, #f44336 18%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #c62828 90%, var(--mat-sys-on-surface, #000));
     }
 
     .topic-chip {
-      background-color: #e3f2fd !important;
-      color: #1565c0;
+      background-color: color-mix(in srgb, #2196f3 14%, var(--mat-sys-surface, #fff)) !important;
+      color: color-mix(in srgb, #1565c0 90%, var(--mat-sys-on-surface, #000));
     }
 
     .star-btn,

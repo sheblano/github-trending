@@ -57,5 +57,7 @@ out
 
 # Prisma
 apps/backend/prisma/migrations/
+# Generated client lives in node_modules/@prisma/client (already excluded via node_modules above)
+# node_modules/.prisma is also excluded via node_modules
 
 .nx/polygraph

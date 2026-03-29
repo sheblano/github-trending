@@ -279,7 +279,7 @@ import type {
       font-size: 13px;
       font-weight: 500;
       white-space: nowrap;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
     }
 
     .controls-row {
@@ -313,7 +313,7 @@ import type {
     .empty-state {
       text-align: center;
       padding: 48px 16px;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.5));
     }
 
     .empty-icon {

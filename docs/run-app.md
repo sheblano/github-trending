@@ -4,13 +4,25 @@
 
 The app runs three services:
 
-| Service    | Port | Description                              |
-| ---------- | ---- | ---------------------------------------- |
-| `frontend` | 4200 | Angular 21 app served via nginx          |
-| `backend`  | 3000 | Next.js API server                       |
-| `postgres` | 5432 | PostgreSQL 16 database                   |
+| Service    | Default port | Override via `.env`  | Description                     |
+| ---------- | ------------ | -------------------- | ------------------------------- |
+| `frontend` | 4200         | `FRONTEND_PORT`      | Angular 21 app served via nginx |
+| `backend`  | 3000         | `BACKEND_PORT`       | Next.js API server              |
+| `postgres` | 5432         | `POSTGRES_PORT`      | PostgreSQL 16 database          |
 
 In Docker, nginx proxies `/api/*` requests from the frontend to the backend automatically.
+
+> **Port conflicts:** ports 3000 and 5432 are common defaults for many dev stacks. If they are taken, add overrides to your `.env` — no changes to `docker-compose.yml` needed:
+>
+> ```bash
+> FRONTEND_PORT=4201
+> BACKEND_PORT=3001
+> POSTGRES_PORT=5433
+> NEXT_PUBLIC_APP_URL=http://localhost:4201
+> BACKEND_URL=http://localhost:3001
+> ```
+
+For optional automation (OpenClaw, scripts), the backend also exposes a documented JSON API. See **[docs/api.md](api.md)**.
 
 ---
 
@@ -32,7 +44,7 @@ Node.js 22+ and npm 10+ are only needed if you plan to run locally without Docke
 
    | Field                        | Value                                      |
    | ---------------------------- | ------------------------------------------ |
-   | Application name             | e.g. **Trending Explorer (local)** — GitHub disallows names starting with `GitHub` or `Gist` |
+   | Application name             | e.g. **Trending Explorer (local)** (GitHub disallows names starting with `GitHub` or `Gist`) |
    | Homepage URL                 | `http://localhost:4200`                     |
    | Authorization callback URL   | `http://localhost:3000/api/auth/callback`   |
 

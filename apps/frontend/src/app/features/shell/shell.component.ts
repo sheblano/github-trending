@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { AuthStore } from '../../store/auth.store';
 import { DigestStore } from '../../store/digest.store';
+import { ThemeStore } from '../../store/theme.store';
 
 @Component({
   selector: 'app-shell',
@@ -34,8 +35,11 @@ import { DigestStore } from '../../store/digest.store';
   template: `
     <mat-toolbar color="primary" class="toolbar">
       <span class="logo" routerLink="/trending">
-        <mat-icon>trending_up</mat-icon>
-        <span class="logo-text">GitHub Trending</span>
+        <img src="/logo-mark.svg" alt="" class="logo-img" width="32" height="32" />
+        <span class="logo-text">
+          <span class="logo-title">Trending Explorer</span>
+          <span class="logo-sub">GitHub discovery</span>
+        </span>
       </span>
 
       <span class="spacer"></span>
@@ -45,6 +49,14 @@ import { DigestStore } from '../../store/digest.store';
           <a mat-button routerLink="/trending" routerLinkActive="active-link">
             <mat-icon>explore</mat-icon>
             Trending
+          </a>
+          <a mat-button routerLink="/galaxy" routerLinkActive="active-link">
+            <mat-icon>bubble_chart</mat-icon>
+            Galaxy
+          </a>
+          <a mat-button routerLink="/movers" routerLinkActive="active-link">
+            <mat-icon>rocket_launch</mat-icon>
+            Movers
           </a>
           <a mat-button routerLink="/starred" routerLinkActive="active-link">
             <mat-icon>star</mat-icon>
@@ -56,6 +68,16 @@ import { DigestStore } from '../../store/digest.store';
           </a>
         </nav>
       }
+
+      <button
+        mat-icon-button
+        type="button"
+        (click)="themeStore.toggle()"
+        [matTooltip]="themeStore.mode() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+        class="theme-toggle"
+      >
+        <mat-icon>{{ themeStore.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
 
       @if (authStore.isAuthenticated()) {
         <button
@@ -134,7 +156,7 @@ import { DigestStore } from '../../store/digest.store';
       }
     </mat-toolbar>
 
-    <main class="content">
+    <main class="content app-shell-wide">
       <router-outlet />
     </main>
 
@@ -148,6 +170,24 @@ import { DigestStore } from '../../store/digest.store';
         >
           <mat-icon>explore</mat-icon>
           <span>Trending</span>
+        </a>
+        <a
+          mat-button
+          routerLink="/galaxy"
+          routerLinkActive="active-link"
+          class="bottom-nav-item"
+        >
+          <mat-icon>bubble_chart</mat-icon>
+          <span>Galaxy</span>
+        </a>
+        <a
+          mat-button
+          routerLink="/movers"
+          routerLinkActive="active-link"
+          class="bottom-nav-item"
+        >
+          <mat-icon>rocket_launch</mat-icon>
+          <span>Movers</span>
         </a>
         <a
           mat-button
@@ -165,7 +205,7 @@ import { DigestStore } from '../../store/digest.store';
           class="bottom-nav-item"
         >
           <mat-icon>timeline</mat-icon>
-          <span>Timeline</span>
+          <span>Time</span>
         </a>
       </nav>
     }
@@ -186,15 +226,37 @@ import { DigestStore } from '../../store/digest.store';
     .logo {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       cursor: pointer;
       text-decoration: none;
       color: inherit;
     }
 
+    .logo-img {
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
     .logo-text {
-      font-weight: 500;
-      font-size: 18px;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .logo-title {
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    .theme-toggle {
+      margin-right: 4px;
     }
 
     .spacer {
@@ -270,7 +332,7 @@ import { DigestStore } from '../../store/digest.store';
     .content {
       flex: 1;
       padding: 16px;
-      max-width: 1200px;
+      max-width: 1400px;
       width: 100%;
       margin: 0 auto;
       box-sizing: border-box;
@@ -306,6 +368,10 @@ import { DigestStore } from '../../store/digest.store';
       .logo-text {
         display: none;
       }
+
+      .bottom-nav-item span {
+        font-size: 10px;
+      }
       .content {
         padding: 12px;
         padding-bottom: 72px;
@@ -316,6 +382,7 @@ import { DigestStore } from '../../store/digest.store';
 export class ShellComponent {
   authStore = inject(AuthStore);
   digestStore = inject(DigestStore);
+  themeStore = inject(ThemeStore);
   private router = inject(Router);
   isMobile = false;
 
