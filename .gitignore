@@ -42,3 +42,20 @@ Thumbs.db
 .nx/workspace-data
 .claude/worktrees
 .claude/settings.local.json
+
+.angular
+
+__screenshots__/
+
+# Next.js
+.next
+out
+
+# Environment
+.env
+.env.local
+
+# Prisma
+apps/backend/prisma/migrations/
+
+.nx/polygraph

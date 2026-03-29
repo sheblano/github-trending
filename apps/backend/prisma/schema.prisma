@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int            @id @default(autoincrement())
+  githubId         Int            @unique
+  username         String
+  avatarUrl        String?
+  accessTokenEnc   String
+  lastDigestSeenAt DateTime?
+  sessions         Session[]
+  followedRepos    FollowedRepo[]
+  filterPresets    FilterPreset[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model FollowedRepo {
+  id                Int            @id @default(autoincrement())
+  userId            Int
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubRepoId      Int
+  owner             String
+  name              String
+  fullName          String
+  description       String?
+  language          String?
+  starsCount        Int
+  url               String
+  followedAt        DateTime       @default(now())
+  lastSeenReleaseAt DateTime?
+  notes             String?
+  releases          ReleaseCache[]
+
+  @@unique([userId, githubRepoId])
+}
+
+model ReleaseCache {
+  id          Int          @id @default(autoincrement())
+  repoId      Int
+  repo        FollowedRepo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  tagName     String
+  name        String?
+  body        String?
+  publishedAt DateTime?
+  htmlUrl     String
+  etag        String?
+  fetchedAt   DateTime     @default(now())
+
+  @@unique([repoId, tagName])
+}
+
+model FilterPreset {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+}
+
+model StarHistoryCache {
+  id        Int      @id @default(autoincrement())
+  owner     String
+  name      String
+  data      Json
+  fetchedAt DateTime @default(now())
+
+  @@unique([owner, name])
+}

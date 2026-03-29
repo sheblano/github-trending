@@ -1,0 +1,30 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@github-trending/shared/models": ["libs/shared/models/src/index.ts"],
+      "@github-trending/shared/utils": ["libs/shared/utils/src/index.ts"],
+      "@github-trending/server/github-client": [
+        "libs/server/github-client/src/index.ts"
+      ],
+      "@github-trending/server/auth": ["libs/server/auth/src/index.ts"],
+      "@github-trending/server/repo-sync": [
+        "libs/server/repo-sync/src/index.ts"
+      ]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

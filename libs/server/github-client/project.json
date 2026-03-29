@@ -1,0 +1,9 @@
+{
+  "name": "server-github-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/server/github-client/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project server-github-client --web",
+  "targets": {}
+}
