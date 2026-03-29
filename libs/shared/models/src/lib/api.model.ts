@@ -143,6 +143,7 @@ export interface HotSnapshotDto {
   starsCount: number;
   radarScore: number | null;
   capturedAt: string;
+  whyHot: string[];
 }
 
 export interface TopMoversResponse {

@@ -30,7 +30,15 @@ import { ApiService } from '../../core/api.service';
 import { RepoCardComponent } from '../../shared/components/repo-card.component';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { SavePresetDialogComponent } from '../../shared/components/save-preset-dialog.component';
+import {
+  RepoInsightsPanelComponent,
+  type RepoInsightsPanelData,
+} from '../../shared/components/repo-insights-panel.component';
 import { PresetsStore } from '../../store/presets.store';
+import {
+  RecentlyViewedStore,
+  type RecentlyViewedRepo,
+} from '../../store/recently-viewed.store';
 import { LANGUAGES } from '@github-trending/shared/utils';
 import { TOPICS } from '@github-trending/shared/utils';
 import type {
@@ -59,6 +67,7 @@ import type {
     MatTooltipModule,
     RepoCardComponent,
     ReadmeDrawerComponent,
+    RepoInsightsPanelComponent,
   ],
   template: `
     <app-readme-drawer #readmeDrawer />
@@ -192,6 +201,47 @@ import type {
       </div>
     </div>
 
+    @if (selectedInsights(); as insight) {
+      <div class="insights-wrap">
+        <app-repo-insights-panel
+          [data]="insight"
+          (readmeClick)="openSelectedReadme(readmeDrawer)"
+          (closeClick)="selectedInsights.set(null)"
+        />
+      </div>
+    }
+
+    @if (recentStore.hasItems()) {
+      <section class="recent-section">
+        <div class="recent-header">
+          <div>
+            <h3>Recently viewed</h3>
+            <p>Quickly jump back into repos you were evaluating.</p>
+          </div>
+          <button mat-button type="button" (click)="recentStore.clear()">
+            Clear
+          </button>
+        </div>
+        <div class="recent-grid">
+          @for (item of recentStore.items(); track item.id) {
+            <button
+              type="button"
+              class="recent-card"
+              (click)="showInsightsForRecent(item)"
+            >
+              <span class="recent-name">{{ item.fullName }}</span>
+              <span class="recent-meta">
+                @if (item.language) {
+                  {{ item.language }} ·
+                }
+                ★ {{ formatStars(item.stargazersCount) }}
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
     <div class="trending-scroll" #scrollRoot>
       <div class="repo-grid" [class.mobile]="isMobile()">
         @for (repo of store.repos(); track repo.id) {
@@ -199,8 +249,10 @@ import type {
             [repo]="repo"
             [isStarred]="store.starredRepoIds().has(repo.id)"
             [radarMode]="store.viewMode() === 'radar'"
+            (repoOpen)="trackViewed(repo)"
             (starToggle)="toggleStar(repo)"
-            (previewClick)="readmeDrawer.openRepo(repo)"
+            (explainClick)="showInsightsForRepo(repo)"
+            (previewClick)="openReadme(readmeDrawer, repo)"
           />
         }
       </div>
@@ -290,6 +342,72 @@ import type {
       margin-bottom: 16px;
     }
 
+    .insights-wrap {
+      margin-bottom: 16px;
+    }
+
+    .recent-section {
+      margin-bottom: 16px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+      background: color-mix(in srgb, var(--mat-sys-primary, #1976d2) 4%, var(--mat-sys-surface, #fff));
+    }
+
+    .recent-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .recent-header h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+    }
+
+    .recent-header p {
+      margin: 0;
+      opacity: 0.72;
+      font-size: 13px;
+    }
+
+    .recent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .recent-card {
+      text-align: left;
+      border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+      background: transparent;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .recent-card:hover {
+      background: color-mix(in srgb, var(--mat-sys-primary, #1976d2) 7%, transparent);
+    }
+
+    .recent-name,
+    .recent-meta {
+      display: block;
+    }
+
+    .recent-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .recent-meta {
+      font-size: 12px;
+      opacity: 0.72;
+    }
+
     .sort-select {
       width: 120px;
     }
@@ -349,6 +467,7 @@ import type {
 export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   store = inject(TrendingStore);
   presetsStore = inject(PresetsStore);
+  recentStore = inject(RecentlyViewedStore);
   private authStore = inject(AuthStore);
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
@@ -364,6 +483,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   languages = LANGUAGES;
   topics = TOPICS;
+  selectedInsights = signal<RepoInsightsPanelData | null>(null);
 
   constructor() {
     this.bp.observe([Breakpoints.Handset]).subscribe((r) => {
@@ -429,6 +549,10 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private scrollTrendingTop() {
     this.scrollRoot?.nativeElement?.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  formatStars(value: number): string {
+    return Intl.NumberFormat().format(value);
   }
 
   onSearchChange(value: string) {
@@ -512,6 +636,81 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
           order: this.store.order(),
         });
       });
+  }
+
+  trackViewed(repo: GitHubRepo) {
+    this.recentStore.trackRepo(repo);
+  }
+
+  openReadme(drawer: ReadmeDrawerComponent, repo: GitHubRepo) {
+    this.trackViewed(repo);
+    drawer.openRepo(repo);
+  }
+
+  showInsightsForRepo(repo: GitHubRepo) {
+    this.trackViewed(repo);
+    this.selectedInsights.set({
+      fullName: repo.full_name,
+      htmlUrl: repo.html_url,
+      description: repo.description,
+      language: repo.language,
+      watchScore: repo.watchScore,
+      radarScore: repo.radarScore,
+      badge: this.store.viewMode() === 'radar' ? 'Radar view' : undefined,
+      reasons: [
+        ...(repo.radarReasons ?? []),
+        ...((repo.watchReasons ?? []).filter((r) => !(repo.radarReasons ?? []).includes(r))),
+      ],
+      context:
+        this.store.viewMode() === 'radar'
+          ? 'This repo is being ranked by momentum and health signals instead of the default GitHub order.'
+          : 'These are the health and momentum signals behind the current repo score.',
+    });
+  }
+
+  showInsightsForRecent(item: RecentlyViewedRepo) {
+    this.selectedInsights.set({
+      fullName: item.fullName,
+      htmlUrl: item.htmlUrl,
+      description: item.description,
+      language: item.language,
+      watchScore: item.watchScore,
+      radarScore: item.radarScore,
+      badge: 'Recently viewed',
+      reasons: [
+        ...(item.radarReasons ?? []),
+        ...((item.watchReasons ?? []).filter((r) => !(item.radarReasons ?? []).includes(r))),
+      ],
+      context: `Viewed ${new Date(item.viewedAt).toLocaleString()}.`,
+    });
+  }
+
+  openSelectedReadme(drawer: ReadmeDrawerComponent) {
+    const s = this.selectedInsights();
+    if (!s) return;
+    const [owner = '', name = ''] = s.fullName.split('/');
+    this.openReadme(drawer, {
+      id: Date.now(),
+      name,
+      full_name: s.fullName,
+      owner: { login: owner, avatar_url: '' },
+      html_url: s.htmlUrl,
+      description: s.description ?? null,
+      language: s.language ?? null,
+      stargazers_count: 0,
+      forks_count: 0,
+      open_issues_count: 0,
+      pushed_at: new Date().toISOString(),
+      created_at: '',
+      updated_at: '',
+      topics: [],
+      license: null,
+      archived: false,
+      watchScore: s.watchScore,
+      radarScore: s.radarScore,
+      watchReasons: s.reasons,
+      radarReasons: s.reasons,
+    });
   }
 
   toggleStar(repo: GitHubRepo) {

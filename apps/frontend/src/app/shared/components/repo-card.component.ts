@@ -47,7 +47,13 @@ import { SparklineComponent } from './sparkline.component';
           class="owner-avatar"
         />
         <mat-card-title>
-          <a [href]="repo().html_url" target="_blank" rel="noopener" class="repo-link">
+          <a
+            [href]="repo().html_url"
+            target="_blank"
+            rel="noopener"
+            class="repo-link"
+            (click)="repoOpen.emit()"
+          >
             {{ repo().full_name }}
           </a>
         </mat-card-title>
@@ -147,6 +153,15 @@ import { SparklineComponent } from './sparkline.component';
       </mat-card-content>
 
       <mat-card-actions align="end">
+        <button
+          mat-icon-button
+          type="button"
+          (click)="explainClick.emit(); $event.stopPropagation()"
+          matTooltip="Why this is hot"
+          class="preview-btn"
+        >
+          <mat-icon>insights</mat-icon>
+        </button>
         <button
           mat-icon-button
           type="button"
@@ -334,7 +349,9 @@ export class RepoCardComponent implements AfterViewInit {
   isStarred = input(false);
   /** Emphasize radar rank and reasons when trending is in radar view. */
   radarMode = input(false);
+  repoOpen = output<void>();
   starToggle = output<void>();
+  explainClick = output<void>();
   previewClick = output<void>();
 
   authStore = inject(AuthStore);

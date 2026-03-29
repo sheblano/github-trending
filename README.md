@@ -8,13 +8,25 @@
 
 No AI or assistants are required to use the app; they are optional if you want them.
 
+**Why self-hosted?** You keep your own OAuth app, your own database, your own notes/presets, and your own automation hooks without depending on a hosted third-party service.
+
 🤖 **This project was vibe-coded.** I came up with the feature ideas and provided the technical direction; the actual code was largely AI-generated.
 
 ### Preview
 
+
 | Trending | Galaxy discovery | Top Movers |
-|----------|-----------------|------------|
-| ![Trending](docs/screenshots/trending.png) | ![Galaxy](docs/screenshots/galaxy.png) | ![Top Movers](docs/screenshots/movers.png) |
+| -------- | ---------------- | ---------- |
+| Trending | Galaxy           | Top Movers |
+
+
+---
+
+## 👥 Who this is for
+
+- Developers evaluating open-source repos before starring, following, or depending on them
+- People tracking dependencies and wanting a better sense of repo momentum, health, and releases
+- Users who already browse GitHub Trending regularly and want filters, history, notes, and better ranking
 
 ---
 
@@ -35,6 +47,27 @@ So I built it.
 
 ---
 
+## ⚖️ Compared with GitHub Trending
+
+
+| Capability                | GitHub Trending      | This app             |
+| ------------------------- | -------------------- | -------------------- |
+| Date range                | Today / week / month | Today / week / month |
+| Language filter           | Limited              | Yes                  |
+| Topic filters             | No                   | Yes                  |
+| Search within results     | No                   | Yes                  |
+| Save presets              | No                   | Yes                  |
+| Repo health scoring       | No                   | Yes                  |
+| Radar ranking             | No                   | Yes                  |
+| Galaxy discovery view     | No                   | Yes                  |
+| Release tracking          | No                   | Yes                  |
+| Personal notes            | No                   | Yes                  |
+| Timeline / movers history | No                   | Yes                  |
+| Optional automation API   | No                   | Yes                  |
+
+
+---
+
 ## ✨ Features
 
 ### 🔍 Discovery & filtering
@@ -47,7 +80,7 @@ So I built it.
 - **Debounced search** across repo names and descriptions
 - **Filter presets:** save your favorite filter combos (cloud-synced when signed in, localStorage when anonymous)
 
-### 📊 Watchlist confidence score
+### 📊 Repo health score
 
 Every repo card shows a **numeric score (0–100)** and a **label** (Strong / Watch / Cooling / Risky) computed from:
 
@@ -68,14 +101,17 @@ Toggle between **Default** (GitHub's ranking) and **Radar** (momentum + health r
 - Shows a **radar rank** chip per repo
 - Highlights **"hot" repos** (score >= 72) with a purple accent border
 - Surfaces reasons like *"Strong star growth"*, *"Recently pushed"*, *"Fresh commits"*
+- Includes a **"Why this is hot"** details panel so you can inspect the reasons behind radar and movers results
 
 ### 🌌 Galaxy discovery
 
 Interactive **scatter / galaxy** view: each repo is a dot positioned by momentum (radar) vs confidence/stability (watch + maintainer signals), sized by stars, colored by language, with glow on hot radar picks. Includes a detail panel and README preview.
 
-### 🚀 Top Movers
+### 🚀 What’s moving fastest
 
 Dashboard aggregating **star spikes**, **entered radar**, **fresh releases**, and **hot snapshots** (high radar score) from your instance’s timeline and snapshot data.
+
+Click any movers card to open the same **"Why this is hot"** explanation panel with the event context or snapshot reasons behind it.
 
 ### 🎨 Brand & dark UI
 
@@ -84,6 +120,8 @@ Dashboard aggregating **star spikes**, **entered radar**, **fresh releases**, an
 ### 🃏 Repo cards at a glance
 
 Each card displays: owner avatar, full name (linked), description, primary language, formatted star count, forks, last push date, commit recency health chip (Active / Slowing / Stale), open issue count, license (or "No License" warning), archive status, and up to 5 topic chips.
+
+The Trending page also keeps a **recently viewed** strip in local storage so you can jump back into repos you were evaluating.
 
 ### 📈 Star history sparkline
 
@@ -133,14 +171,16 @@ Full **mobile-first** layout: bottom tab navigation on small screens, scrollable
 
 ## 🛠 Tech stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Angular 21 (Signals, zoneless), Angular Material, @ngrx/signals |
-| **Backend** | Next.js 16 (App Router, API routes) |
-| **Database** | PostgreSQL 16, Prisma ORM |
-| **Auth** | GitHub OAuth with DB-backed encrypted sessions; optional agent tokens for API access |
-| **Monorepo** | Nx 22 with shared TypeScript libraries |
-| **Infrastructure** | Docker Compose, nginx reverse proxy |
+
+| Layer              | Technology                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| **Frontend**       | Angular 21 (Signals, zoneless), Angular Material, @ngrx/signals                      |
+| **Backend**        | Next.js 16 (App Router, API routes)                                                  |
+| **Database**       | PostgreSQL 16, Prisma ORM                                                            |
+| **Auth**           | GitHub OAuth with DB-backed encrypted sessions; optional agent tokens for API access |
+| **Monorepo**       | Nx 22 with shared TypeScript libraries                                               |
+| **Infrastructure** | Docker Compose, nginx reverse proxy                                                  |
+
 
 ### 📁 Project structure
 
@@ -165,11 +205,12 @@ libs/server        Backend domain libraries:
 - **Docker Desktop** (or Docker Engine + Compose v2)
 - A **GitHub OAuth App**: [create one here](https://github.com/settings/applications/new)
 
-  | Field | Value |
-  |-------|-------|
-  | Application name | e.g. *Trending Explorer (local)* |
-  | Homepage URL | `http://localhost:4200` |
+  | Field                      | Value                                     |
+  | -------------------------- | ----------------------------------------- |
+  | Application name           | e.g. *Trending Explorer (local)*          |
+  | Homepage URL               | `http://localhost:4200`                   |
   | Authorization callback URL | `http://localhost:3000/api/auth/callback` |
+
 
 ### 🐳 Run with Docker
 
@@ -227,15 +268,33 @@ The Angular dev server (`:4200`) proxies `/api/*` to the Next.js server (`:3000`
 
 ## 🔐 Auth & rate limits
 
-| Context | Rate limit | Login required? |
-|---------|-----------|-----------------|
-| Browse trending repos | 60 req/hr (anonymous) | No |
-| Star/unstar, release notes, star history, digest, server presets | 5,000 req/hr (per user) | Yes (browser session or agent token) |
-| README preview | Works anonymously, better limits when signed in | No |
+
+| Context                                                          | Rate limit                                      | Login required?                      |
+| ---------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------ |
+| Browse trending repos                                            | 60 req/hr (anonymous)                           | No                                   |
+| Star/unstar, release notes, star history, digest, server presets | 5,000 req/hr (per user)                         | Yes (browser session or agent token) |
+| README preview                                                   | Works anonymously, better limits when signed in | No                                   |
+
 
 Trending results are cached server-side for 15 minutes.
 
 **API consumers:** Discovery-style endpoints work **without** cookies. Personalized endpoints accept the same **browser session** (`session_id` cookie after GitHub OAuth) **or** `Authorization: Bearer <token>` using an **agent token** you create while signed in. Full matrix and examples: **[docs/api.md](docs/api.md)**.
+
+---
+
+## 🔌 Quick API examples
+
+```bash
+# Trending in Rust this week
+curl -sS "$BACKEND_URL/api/repos/trending?language=Rust&dateRange=weekly&perPage=5"
+
+# Timeline star spikes
+curl -sS "$BACKEND_URL/api/timeline?eventType=star_spike&limit=20"
+
+# Weekly digest (requires agent token)
+curl -sS -H "Authorization: Bearer $TRENDING_AGENT_TOKEN" \
+  "$BACKEND_URL/api/digest"
+```
 
 ---
 
@@ -244,7 +303,16 @@ Trending results are cached server-side for 15 minutes.
 This app stays **UI-first**. If you want assistants or scripts to talk to the same data, use the HTTP API against your backend base URL (`BACKEND_URL`, e.g. `http://localhost:3000`).
 
 - **[OpenClaw](https://github.com/openclaw/openclaw):** Copy the template skill under **[docs/examples/openclaw/](docs/examples/openclaw/)** into your OpenClaw skills folder and set `TRENDING_API_URL`. Prompt ideas: trending by language, radar top N, timeline star spikes, releases/digest (with a bearer token).
-- **Claude / MCP:** Same API; wrap `GET /api/repos/trending` and `GET /api/timeline` (and others) as MCP tools pointing at `TRENDING_API_URL`. See **[docs/api.md](docs/api.md)** for parameters and auth.
+- **Claude / MCP:** Same API; use the example server in **[docs/examples/openclaw/mcp-server.ts](docs/examples/openclaw/mcp-server.ts)** as a starting point, or wrap `GET /api/repos/trending` and `GET /api/timeline` yourself. See **[docs/api.md](docs/api.md)** for parameters and auth.
+
+### OpenClaw-ready checklist
+
+- App running
+- Signed in via the web UI
+- Agent token created
+- `SKILL.md` copied into your OpenClaw skills folder
+  - `TRENDING_API_URL` set
+- `TRENDING_AGENT_TOKEN` set if you want personalized endpoints
 
 No extra vendor keys beyond your own GitHub OAuth app for the web UI; agent tokens are issued by your instance.
 

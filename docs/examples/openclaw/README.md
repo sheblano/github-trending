@@ -2,6 +2,8 @@
 
 This folder contains a **template** skill you can copy into your OpenClaw workspace. It is **not** loaded automatically by this repo — it is documentation + a starting point.
 
+It also includes an example MCP server file, `mcp-server.ts`, if you want to expose the same API to Claude Desktop or another MCP-compatible client.
+
 ## Setup
 
 1. Run the GitHub Trending Explorer backend (see root [README](../../README.md)). Note your API base URL, e.g. `http://localhost:3000` or your deployed `BACKEND_URL`.
@@ -27,6 +29,25 @@ This folder contains a **template** skill you can copy into your OpenClaw worksp
 
    - `TRENDING_API_URL`: backend base URL (no trailing slash), e.g. `http://localhost:3000`
    - `TRENDING_AGENT_TOKEN`: optional; required only for personalized endpoints (`/api/digest`, `/api/releases`, etc.)
+
+## MCP example
+
+`mcp-server.ts` is a tiny TypeScript example using `@modelcontextprotocol/sdk` that exposes:
+
+- `get_trending`
+- `get_timeline`
+- `get_digest`
+
+Set the same environment variables:
+
+- `TRENDING_API_URL`
+- `TRENDING_AGENT_TOKEN` (optional; needed for `get_digest`)
+
+Run it with a tool like `tsx`:
+
+```bash
+npx tsx docs/examples/openclaw/mcp-server.ts
+```
 
 ## Security
 

@@ -1,4 +1,13 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  signal,
+  ElementRef,
+  viewChild,
+  AfterViewInit,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -9,6 +18,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -31,6 +41,7 @@ import { take } from 'rxjs/operators';
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatExpansionModule,
     MatTooltipModule,
     MatBadgeModule,
@@ -44,6 +55,7 @@ import { take } from 'rxjs/operators';
       [selectedIndex]="selectedTab()"
       (selectedIndexChange)="onTabChange($event)"
     >
+      <!-- ── Starred Repos tab ───────────────────────────────── -->
       <mat-tab label="Starred Repos">
         <div class="tab-content">
           @if (store.starredRepos().length === 0 && !store.loading()) {
@@ -94,20 +106,26 @@ import { take } from 'rxjs/operators';
               </mat-card-content>
 
               <mat-card-actions align="end">
-                <button
-                  mat-button
-                  color="warn"
-                  (click)="unstar(repo.owner, repo.name)"
-                >
+                <button mat-button color="warn" (click)="unstar(repo.owner, repo.name)">
                   <mat-icon>star</mat-icon>
                   Unstar
                 </button>
               </mat-card-actions>
             </mat-card>
           }
+
+          <!-- Sentinel: triggers loadMoreStarred when visible -->
+          <div #starredSentinel class="scroll-sentinel">
+            @if (store.loadingMore()) {
+              <mat-progress-spinner diameter="32" mode="indeterminate" />
+            } @else if (!store.starredHasMore() && store.starredRepos().length > 0) {
+              <span class="end-label">All {{ store.starredRepos().length }} repos loaded</span>
+            }
+          </div>
         </div>
       </mat-tab>
 
+      <!-- ── Release Notes tab ───────────────────────────────── -->
       <mat-tab>
         <ng-template mat-tab-label>
           Release Notes
@@ -163,6 +181,15 @@ import { take } from 'rxjs/operators';
               </mat-expansion-panel>
             }
           </mat-accordion>
+
+          <!-- Sentinel: triggers loadMoreReleases when visible -->
+          <div #releasesSentinel class="scroll-sentinel">
+            @if (store.releasesLoadingMore()) {
+              <mat-progress-spinner diameter="32" mode="indeterminate" />
+            } @else if (!store.releasesHasMore() && store.releaseFeeds().length > 0) {
+              <span class="end-label">All {{ store.releaseFeeds().length }} repos shown</span>
+            }
+          </div>
         </div>
       </mat-tab>
     </mat-tab-group>
@@ -199,7 +226,7 @@ import { take } from 'rxjs/operators';
       align-items: center;
       gap: 2px;
       font-size: 13px;
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--mat-sys-on-surface-variant, rgba(0,0,0,0.6));
     }
 
     .stat-icon {
@@ -215,7 +242,7 @@ import { take } from 'rxjs/operators';
     .empty-state {
       text-align: center;
       padding: 48px 16px;
-      color: rgba(0, 0, 0, 0.5);
+      color: var(--mat-sys-on-surface-variant, rgba(0,0,0,0.5));
     }
 
     .empty-icon {
@@ -249,7 +276,7 @@ import { take } from 'rxjs/operators';
     }
 
     .release-body pre {
-      background: rgba(0, 0, 0, 0.05);
+      background: var(--mat-sys-surface-container, rgba(0, 0, 0, 0.05));
       padding: 12px;
       border-radius: 4px;
       overflow-x: auto;
@@ -259,9 +286,22 @@ import { take } from 'rxjs/operators';
       font-family: monospace;
       font-size: 13px;
     }
+
+    .scroll-sentinel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 48px;
+      padding: 16px 0;
+    }
+
+    .end-label {
+      font-size: 13px;
+      opacity: 0.5;
+    }
   `,
 })
-export class StarredComponent implements OnInit {
+export class StarredComponent implements OnInit, AfterViewInit, OnDestroy {
   store = inject(StarredStore);
   private trendingStore = inject(TrendingStore);
   private route = inject(ActivatedRoute);
@@ -270,6 +310,11 @@ export class StarredComponent implements OnInit {
 
   formatStars = formatStarCount;
   formatDate = formatRelativeDate;
+
+  starredSentinel = viewChild<ElementRef<HTMLDivElement>>('starredSentinel');
+  releasesSentinel = viewChild<ElementRef<HTMLDivElement>>('releasesSentinel');
+
+  private observers: IntersectionObserver[] = [];
 
   constructor() {
     const bp = inject(BreakpointObserver);
@@ -288,9 +333,36 @@ export class StarredComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit() {
+    this.attachSentinel(
+      this.starredSentinel()?.nativeElement,
+      () => this.store.loadMoreStarred()
+    );
+    this.attachSentinel(
+      this.releasesSentinel()?.nativeElement,
+      () => this.store.loadMoreReleases()
+    );
+  }
+
+  ngOnDestroy() {
+    this.observers.forEach((o) => o.disconnect());
+  }
+
+  private attachSentinel(el: HTMLElement | undefined, onVisible: () => void) {
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onVisible();
+      },
+      { rootMargin: '120px' }
+    );
+    obs.observe(el);
+    this.observers.push(obs);
+  }
+
   onTabChange(index: number) {
     this.selectedTab.set(index);
-    if (index === 1) {
+    if (index === 1 && this.store.releasesPage() === 0) {
       this.store.loadReleases();
     }
   }

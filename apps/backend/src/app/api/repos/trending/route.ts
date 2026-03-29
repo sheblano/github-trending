@@ -79,11 +79,10 @@ export async function GET(request: Request) {
     viewMode,
   };
 
-  try {
-    await recordTrendingSnapshotsIfDue(prisma, repos);
-  } catch (e) {
-    console.error('recordTrendingSnapshotsIfDue', e);
-  }
+  // Fire-and-forget: don't block the response waiting for snapshot writes.
+  recordTrendingSnapshotsIfDue(prisma, repos).catch((e) =>
+    console.error('recordTrendingSnapshotsIfDue', e)
+  );
 
   if (!token) {
     cache.set(cacheKey, { data: response, timestamp: Date.now() });

@@ -96,7 +96,7 @@ Anonymous GitHub search traffic is limited by GitHub (see the main [README](../R
 
 ## Schema changes
 
-If you pull updates that add tables (e.g. agent tokens), run:
+If you pull updates that add tables or indexes, run:
 
 ```bash
 npx prisma db push --schema=apps/backend/prisma/schema.prisma

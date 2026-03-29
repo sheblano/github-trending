@@ -348,7 +348,7 @@ function normalizeNodes(nodes: import('@github-trending/shared/models').GalaxyDi
       font-size: 2.2px;
     }
     circle {
-      stroke: rgba(0, 0, 0, 0.25);
+      stroke: var(--mat-sys-outline-variant, rgba(128,128,128,0.3));
       stroke-width: 0.06;
       cursor: pointer;
       transition:

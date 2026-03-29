@@ -64,12 +64,24 @@ export async function aggregateTopMovers(prisma: PrismaClient) {
     starsCount: number;
     radarScore: number | null;
     capturedAt: string;
+    whyHot: string[];
   }> = [];
 
   for (const s of recentSnapshots) {
     if (seen.has(s.githubRepoId)) continue;
     seen.add(s.githubRepoId);
     if (s.radarScore != null && s.radarScore >= 55) {
+      const whyHot = [
+        `Radar score ${s.radarScore}`,
+        'Recent high-signal snapshot',
+      ];
+      if (s.pushedAt) {
+        const ageDays = Math.floor(
+          (Date.now() - s.pushedAt.getTime()) / (24 * 60 * 60 * 1000)
+        );
+        if (ageDays <= 7) whyHot.push('Recently pushed');
+      }
+      if (s.starsCount >= 1000) whyHot.push('Meaningful star base');
       hotNow.push({
         githubRepoId: s.githubRepoId,
         fullName: s.fullName,
@@ -78,6 +90,7 @@ export async function aggregateTopMovers(prisma: PrismaClient) {
         starsCount: s.starsCount,
         radarScore: s.radarScore,
         capturedAt: s.capturedAt.toISOString(),
+        whyHot,
       });
       if (hotNow.length >= 14) break;
     }

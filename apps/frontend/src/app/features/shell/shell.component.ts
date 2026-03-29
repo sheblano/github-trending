@@ -345,7 +345,7 @@ import { ThemeStore } from '../../store/theme.store';
       left: 0;
       right: 0;
       background: var(--mat-toolbar-container-background-color, #fff);
-      border-top: 1px solid rgba(0, 0, 0, 0.12);
+      border-top: 1px solid var(--mat-sys-outline-variant);
       z-index: 100;
       padding: 4px 0;
     }

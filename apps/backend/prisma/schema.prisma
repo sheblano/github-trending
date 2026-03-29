@@ -62,6 +62,7 @@ model FollowedRepo {
   releases          ReleaseCache[]
 
   @@unique([userId, githubRepoId])
+  @@index([userId, followedAt(sort: Desc)])
 }
 
 model ReleaseCache {
@@ -77,6 +78,7 @@ model ReleaseCache {
   fetchedAt   DateTime     @default(now())
 
   @@unique([repoId, tagName])
+  @@index([repoId, publishedAt(sort: Desc)])
 }
 
 model FilterPreset {
@@ -131,4 +133,6 @@ model TimelineEvent {
   createdAt    DateTime @default(now())
 
   @@index([eventAt(sort: Desc)])
+  @@index([eventType, eventAt(sort: Desc)])
+  @@index([fullName, eventAt(sort: Desc)])
 }
