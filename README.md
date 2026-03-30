@@ -10,7 +10,7 @@ No AI or assistants are required to use the app; they are optional if you want t
 
 **Why self-hosted?** You keep your own OAuth app, your own database, your own notes/presets, and your own automation hooks without depending on a hosted third-party service.
 
-🤖 **This project was vibe-coded.** I came up with the feature ideas and provided the technical direction; the actual code was largely AI-generated.
+🤖 **This project was mostly vibe-coded.** I came up with the feature ideas and provided the technical direction; the actual code was largely AI-generated.
 
 ### Preview
 
