@@ -101,7 +101,7 @@ Toggle between **Default** (GitHub's ranking) and **Radar** (momentum + health r
 - Shows a **radar rank** chip per repo
 - Highlights **"hot" repos** (score >= 72) with a purple accent border
 - Surfaces reasons like *"Strong star growth"*, *"Recently pushed"*, *"Fresh commits"*
-- Includes a **"Why this is hot"** details panel so you can inspect the reasons behind radar and movers results
+- **"Why this is hot"** opens in a **dialog** (insights icon on each card) so you can read radar reasons and scores without breaking the page layout
 
 ### 🌌 Galaxy discovery
 
@@ -111,7 +111,7 @@ Interactive **scatter / galaxy** view: each repo is a dot positioned by momentum
 
 Dashboard aggregating **star spikes**, **entered radar**, **fresh releases**, and **hot snapshots** (high radar score) from your instance’s timeline and snapshot data.
 
-Click any movers card to open the same **"Why this is hot"** explanation panel with the event context or snapshot reasons behind it.
+Click any movers card to open the same **"Why this is hot"** dialog with the event context or snapshot reasons behind it.
 
 ### 🎨 Brand & dark UI
 
@@ -121,7 +121,9 @@ Click any movers card to open the same **"Why this is hot"** explanation panel w
 
 Each card displays: owner avatar, full name (linked), description, primary language, formatted star count, forks, last push date, commit recency health chip (Active / Slowing / Stale), open issue count, license (or "No License" warning), archive status, and up to 5 topic chips.
 
-The Trending page also keeps a **recently viewed** strip in local storage so you can jump back into repos you were evaluating.
+**Layout:** descriptions are **clamped to three lines** with ellipsis so cards stay **even height** in the grid. On desktop, **hover** the description to see the full text in a popover above the card (no reflow of neighbors). On mobile, tap **More** or the description area to expand that card only.
+
+The Trending page also keeps a **recently viewed** strip in local storage so you can jump back into repos you were evaluating (opens the same insights dialog when you pick an item).
 
 ### 📈 Star history sparkline
 
@@ -165,7 +167,7 @@ Filter by repo name or event type. Events are derived from throttled snapshots r
 
 ### 📐 Responsive design
 
-Full **mobile-first** layout: bottom tab navigation on small screens, scrollable chip rows, stacked controls, and a single-column repo grid.
+Full **mobile-first** layout: bottom tab navigation on small screens, scrollable chip rows, stacked controls, and a single-column repo grid. Repo descriptions support tap-to-expand on small screens; insights use the same modal pattern as on desktop.
 
 ---
 

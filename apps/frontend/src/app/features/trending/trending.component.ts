@@ -30,10 +30,8 @@ import { ApiService } from '../../core/api.service';
 import { RepoCardComponent } from '../../shared/components/repo-card.component';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { SavePresetDialogComponent } from '../../shared/components/save-preset-dialog.component';
-import {
-  RepoInsightsPanelComponent,
-  type RepoInsightsPanelData,
-} from '../../shared/components/repo-insights-panel.component';
+import { type RepoInsightsPanelData } from '../../shared/components/repo-insights-panel.component';
+import { RepoInsightsDialogComponent } from '../../shared/components/repo-insights-dialog.component';
 import { PresetsStore } from '../../store/presets.store';
 import {
   RecentlyViewedStore,
@@ -67,7 +65,6 @@ import type {
     MatTooltipModule,
     RepoCardComponent,
     ReadmeDrawerComponent,
-    RepoInsightsPanelComponent,
   ],
   template: `
     <app-readme-drawer #readmeDrawer />
@@ -201,16 +198,6 @@ import type {
       </div>
     </div>
 
-    @if (selectedInsights(); as insight) {
-      <div class="insights-wrap">
-        <app-repo-insights-panel
-          [data]="insight"
-          (readmeClick)="openSelectedReadme(readmeDrawer)"
-          (closeClick)="selectedInsights.set(null)"
-        />
-      </div>
-    }
-
     @if (recentStore.hasItems()) {
       <section class="recent-section">
         <div class="recent-header">
@@ -342,10 +329,6 @@ import type {
       margin-bottom: 16px;
     }
 
-    .insights-wrap {
-      margin-bottom: 16px;
-    }
-
     .recent-section {
       margin-bottom: 16px;
       padding: 16px;
@@ -422,6 +405,7 @@ import type {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
       gap: 12px;
+      align-items: stretch;
     }
 
     .repo-grid.mobile {
@@ -478,13 +462,12 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('scrollRoot') scrollRoot?: ElementRef<HTMLElement>;
   @ViewChild('loadMoreSentinel') sentinel?: ElementRef<HTMLElement>;
+  @ViewChild('readmeDrawer') readmeDrawer?: ReadmeDrawerComponent;
 
   private intersectionObserver?: IntersectionObserver;
 
   languages = LANGUAGES;
   topics = TOPICS;
-  selectedInsights = signal<RepoInsightsPanelData | null>(null);
-
   constructor() {
     this.bp.observe([Breakpoints.Handset]).subscribe((r) => {
       this.isMobile.set(r.matches);
@@ -649,7 +632,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   showInsightsForRepo(repo: GitHubRepo) {
     this.trackViewed(repo);
-    this.selectedInsights.set({
+    this.openInsightsDialog({
       fullName: repo.full_name,
       htmlUrl: repo.html_url,
       description: repo.description,
@@ -669,7 +652,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   showInsightsForRecent(item: RecentlyViewedRepo) {
-    this.selectedInsights.set({
+    this.openInsightsDialog({
       fullName: item.fullName,
       htmlUrl: item.htmlUrl,
       description: item.description,
@@ -685,9 +668,27 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  openSelectedReadme(drawer: ReadmeDrawerComponent) {
-    const s = this.selectedInsights();
-    if (!s) return;
+  private openInsightsDialog(insight: RepoInsightsPanelData) {
+    this.dialog.open(RepoInsightsDialogComponent, {
+      width: 'min(520px, 92vw)',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
+      data: {
+        insight,
+        onReadme: () => {
+          const drawer = this.readmeDrawer;
+          if (drawer) {
+            this.openReadmeFromPanelData(drawer, insight);
+          }
+        },
+      },
+    });
+  }
+
+  private openReadmeFromPanelData(
+    drawer: ReadmeDrawerComponent,
+    s: RepoInsightsPanelData
+  ) {
     const [owner = '', name = ''] = s.fullName.split('/');
     this.openReadme(drawer, {
       id: Date.now(),
