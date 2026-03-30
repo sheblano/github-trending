@@ -14,10 +14,9 @@ No AI or assistants are required to use the app; they are optional if you want t
 
 ### Preview
 
-
 | Trending | Galaxy discovery | Top Movers |
 | -------- | ---------------- | ---------- |
-| Trending | Galaxy           | Top Movers |
+| [![Trending screenshot](docs/screenshots/trending.png)](docs/screenshots/trending.png) | [![Galaxy discovery screenshot](docs/screenshots/galaxy.png)](docs/screenshots/galaxy.png) | [![Top Movers screenshot](docs/screenshots/movers.png)](docs/screenshots/movers.png) |
 
 
 ---
