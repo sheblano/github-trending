@@ -10,13 +10,31 @@ No AI or assistants are required to use the app; they are optional if you want t
 
 **Why self-hosted?** You keep your own OAuth app, your own database, your own notes/presets, and your own automation hooks without depending on a hosted third-party service.
 
-🤖 **This project was mostly vibe-coded.** I came up with the feature ideas and provided the technical direction; the actual code was largely AI-generated.
+🤖 **This project was built with heavy AI assistance.** I defined the product vision, core features, and technical direction, then used AI to speed up implementation and iteration.
 
 ### Preview
 
-| Trending | Galaxy discovery | Top Movers |
-| -------- | ---------------- | ---------- |
-| [![Trending screenshot](docs/screenshots/trending.png)](docs/screenshots/trending.png) | [![Galaxy discovery screenshot](docs/screenshots/galaxy.png)](docs/screenshots/galaxy.png) | [![Top Movers screenshot](docs/screenshots/movers.png)](docs/screenshots/movers.png) |
+<p align="center">
+  <a href="docs/screenshots/trending.png">
+    <img src="docs/screenshots/trending.png" alt="Trending view" width="96%" />
+  </a>
+</p>
+<p align="center">
+  <strong>Trending</strong>
+</p>
+
+<p align="center">
+  <a href="docs/screenshots/galaxy.png">
+    <img src="docs/screenshots/galaxy.png" alt="Galaxy discovery view" width="48%" />
+  </a>
+  <a href="docs/screenshots/movers.png">
+    <img src="docs/screenshots/movers.png" alt="Top Movers view" width="48%" />
+  </a>
+</p>
+<p align="center">
+  <strong>Galaxy discovery</strong> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <strong>Top Movers</strong>
+</p>
 
 
 ---
