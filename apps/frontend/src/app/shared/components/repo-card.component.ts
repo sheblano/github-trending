@@ -20,6 +20,7 @@ import { formatRelativeDate } from '@github-trending/shared/utils';
 import { ApiService } from '../../core/api.service';
 import { AuthStore } from '../../store/auth.store';
 import { SparklineComponent } from './sparkline.component';
+import { AnimateCountDirective } from '../directives/animate-count.directive';
 
 @Component({
   selector: 'app-repo-card',
@@ -32,6 +33,7 @@ import { SparklineComponent } from './sparkline.component';
     MatTooltipModule,
     MatProgressSpinnerModule,
     SparklineComponent,
+    AnimateCountDirective,
   ],
   template: `
     <mat-card
@@ -67,9 +69,11 @@ import { SparklineComponent } from './sparkline.component';
       <mat-card-content>
         <div class="signal-row">
           @if (repo().watchScore !== null && repo().watchScore !== undefined) {
-            <span class="watch-score" [matTooltip]="watchReasonsTooltip()">
-              {{ repo().watchScore }}
-            </span>
+            <span
+              class="watch-score"
+              [matTooltip]="watchReasonsTooltip()"
+              [appAnimateCount]="repo().watchScore!"
+            ></span>
             <mat-chip
               [class]="'watch-label-chip ' + watchLabelClass()"
               [matTooltip]="watchLabelTooltip()"
@@ -101,20 +105,33 @@ import { SparklineComponent } from './sparkline.component';
         <div class="stats-row">
           <span class="stat stat-primary" matTooltip="Stars">
             <mat-icon class="stat-icon">star</mat-icon>
-            {{ formatStars(repo().stargazers_count) }}
+            <span
+              [appAnimateCount]="repo().stargazers_count"
+              [appAnimateCountFormat]="formatStars"
+            ></span>
           </span>
           <span class="stat" matTooltip="Forks">
             <mat-icon class="stat-icon">call_split</mat-icon>
-            {{ repo().forks_count }}
+            <span
+              [appAnimateCount]="repo().forks_count"
+              [appAnimateCountFormat]="formatStars"
+            ></span>
           </span>
           <span class="stat" matTooltip="Open issues">
             <mat-icon class="stat-icon">bug_report</mat-icon>
-            {{ repo().open_issues_count }}
+            <span [appAnimateCount]="repo().open_issues_count"></span>
           </span>
           <span class="stat" matTooltip="Last pushed">
             <mat-icon class="stat-icon">schedule</mat-icon>
             {{ formatDate(repo().pushed_at) }}
           </span>
+          <mat-chip
+            class="age-chip"
+            [matTooltip]="'Created ' + repo().created_at.split('T')[0]"
+          >
+            <mat-icon class="age-icon">cake</mat-icon>
+            {{ formatDate(repo().created_at) }}
+          </mat-chip>
         </div>
 
         <div class="secondary-row">
@@ -417,6 +434,22 @@ import { SparklineComponent } from './sparkline.component';
     .topic-chip {
       background-color: color-mix(in srgb, #2196f3 14%, var(--mat-sys-surface, #fff)) !important;
       color: color-mix(in srgb, #1565c0 90%, var(--mat-sys-on-surface, #000));
+    }
+
+    .age-chip {
+      font-size: 11px;
+      min-height: 22px;
+      padding: 0 8px;
+      margin-left: auto;
+      background: color-mix(in srgb, var(--mat-sys-tertiary, #795548) 12%, var(--mat-sys-surface, #fff)) !important;
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+    }
+
+    .age-icon {
+      font-size: 13px;
+      width: 13px;
+      height: 13px;
+      margin-right: 3px;
     }
 
     .topic-chip-muted {
