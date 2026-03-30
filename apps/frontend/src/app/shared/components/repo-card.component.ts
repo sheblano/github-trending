@@ -46,33 +46,38 @@ import { SparklineComponent } from './sparkline.component';
           [alt]="repo().owner.login"
           class="owner-avatar"
         />
-        <mat-card-title>
-          <a
-            [href]="repo().html_url"
-            target="_blank"
-            rel="noopener"
-            class="repo-link"
-            (click)="repoOpen.emit()"
-          >
-            {{ repo().full_name }}
-          </a>
-        </mat-card-title>
-        <mat-card-subtitle>
-          {{ repo().description || 'No description' }}
-        </mat-card-subtitle>
+        <div class="title-wrap">
+          <mat-card-title>
+            <a
+              [href]="repo().html_url"
+              target="_blank"
+              rel="noopener"
+              class="repo-link"
+              (click)="repoOpen.emit()"
+            >
+              {{ repo().full_name }}
+            </a>
+          </mat-card-title>
+          <mat-card-subtitle class="repo-description">
+            {{ repo().description || 'No description' }}
+          </mat-card-subtitle>
+        </div>
       </mat-card-header>
 
       <mat-card-content>
-        <div class="meta-row">
-          @if (repo().watchScore != null) {
+        <div class="signal-row">
+          @if (repo().watchScore !== null && repo().watchScore !== undefined) {
             <span class="watch-score" [matTooltip]="watchReasonsTooltip()">
               {{ repo().watchScore }}
             </span>
-            <mat-chip [class]="'watch-label-chip ' + watchLabelClass()">
+            <mat-chip
+              [class]="'watch-label-chip ' + watchLabelClass()"
+              [matTooltip]="watchLabelTooltip()"
+            >
               {{ watchLabelDisplay() }}
             </mat-chip>
           }
-          @if (radarMode() && repo().radarRank != null) {
+          @if (radarMode() && repo().radarRank !== null && repo().radarRank !== undefined) {
             <mat-chip class="radar-rank-chip" matTooltip="Radar rank (this page)">
               #{{ repo().radarRank }}
             </mat-chip>
@@ -80,12 +85,6 @@ import { SparklineComponent } from './sparkline.component';
           @if (repo().language) {
             <mat-chip class="lang-chip">{{ repo().language }}</mat-chip>
           }
-
-          <span class="stat" matTooltip="Stars">
-            <mat-icon class="stat-icon">star</mat-icon>
-            {{ formatStars(repo().stargazers_count) }}
-          </span>
-
           @if (authStore.isAuthenticated()) {
             <span class="spark-wrap" matTooltip="Star growth (weekly, sampled)">
               @if (starHistoryLoading()) {
@@ -97,19 +96,28 @@ import { SparklineComponent } from './sparkline.component';
               }
             </span>
           }
+        </div>
 
+        <div class="stats-row">
+          <span class="stat stat-primary" matTooltip="Stars">
+            <mat-icon class="stat-icon">star</mat-icon>
+            {{ formatStars(repo().stargazers_count) }}
+          </span>
           <span class="stat" matTooltip="Forks">
             <mat-icon class="stat-icon">call_split</mat-icon>
             {{ repo().forks_count }}
           </span>
-
+          <span class="stat" matTooltip="Open issues">
+            <mat-icon class="stat-icon">bug_report</mat-icon>
+            {{ repo().open_issues_count }}
+          </span>
           <span class="stat" matTooltip="Last pushed">
             <mat-icon class="stat-icon">schedule</mat-icon>
             {{ formatDate(repo().pushed_at) }}
           </span>
         </div>
 
-        <div class="health-row">
+        <div class="secondary-row">
           @if (radarMode() && (repo().radarReasons?.length ?? 0) > 0) {
             <mat-chip class="radar-reason-chip" [matTooltip]="radarReasonsTooltip()">
               {{ repo().radarReasons![0] }}
@@ -122,11 +130,6 @@ import { SparklineComponent } from './sparkline.component';
           >
             {{ commitRecency() === 'healthy' ? 'Active' : commitRecency() === 'warning' ? 'Slowing' : 'Stale' }}
           </mat-chip>
-
-          <span class="stat" matTooltip="Open issues">
-            <mat-icon class="stat-icon">bug_report</mat-icon>
-            {{ repo().open_issues_count }}
-          </span>
 
           @if (repo().license) {
             <mat-chip class="license-chip" matTooltip="License">
@@ -145,8 +148,13 @@ import { SparklineComponent } from './sparkline.component';
 
         @if (repo().topics.length > 0) {
           <div class="topics-row">
-            @for (topic of repo().topics.slice(0, 5); track topic) {
+            @for (topic of visibleTopics(); track topic) {
               <mat-chip class="topic-chip">{{ topic }}</mat-chip>
+            }
+            @if (hiddenTopicCount() > 0) {
+              <mat-chip class="topic-chip topic-chip-muted">
+                +{{ hiddenTopicCount() }} more
+              </mat-chip>
             }
           </div>
         }
@@ -185,13 +193,42 @@ import { SparklineComponent } from './sparkline.component';
     </mat-card>
   `,
   styles: `
+    :host {
+      display: block;
+      height: 100%;
+    }
+
     .repo-card {
-      margin-bottom: 12px;
-      transition: box-shadow 0.2s;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      margin-bottom: 0;
+      overflow: hidden;
+      transition:
+        box-shadow 0.2s,
+        transform 0.2s;
+    }
+
+    .repo-card mat-card-content {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .repo-card mat-card-header {
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .repo-card mat-card-actions {
+      flex-shrink: 0;
+      margin-top: auto;
     }
 
     .repo-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
     }
 
     .repo-card.archived {
@@ -203,20 +240,34 @@ import { SparklineComponent } from './sparkline.component';
       box-shadow: 0 0 0 1px rgba(123, 31, 162, 0.25);
     }
 
+    .title-wrap {
+      min-width: 0;
+    }
+
+    .repo-description {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+      line-height: 1.45;
+      min-height: calc(1.45em * 2);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.65));
+    }
+
     .watch-score {
       font-weight: 700;
-      font-size: 13px;
-      min-width: 28px;
+      font-size: 12px;
+      min-width: 30px;
       text-align: center;
-      padding: 2px 8px;
-      border-radius: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
       background: color-mix(in srgb, var(--mat-sys-primary, #1976d2) 14%, var(--mat-sys-surface, #fff));
       color: var(--mat-sys-primary, #1565c0);
     }
 
     .watch-label-chip {
       font-size: 11px;
-      min-height: 24px;
+      min-height: 22px;
       padding: 0 8px;
     }
 
@@ -255,6 +306,9 @@ import { SparklineComponent } from './sparkline.component';
 
     .owner-avatar {
       border-radius: 50%;
+      margin: 4px 0 0 4px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--mat-sys-primary, #1976d2) 8%, transparent);
+      flex-shrink: 0;
     }
 
     .repo-link {
@@ -267,35 +321,63 @@ import { SparklineComponent } from './sparkline.component';
       text-decoration: underline;
     }
 
-    .meta-row,
-    .health-row,
+    .signal-row,
+    .stats-row,
+    .secondary-row,
     .topics-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: 10px;
+    }
+
+    .signal-row {
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    .stats-row {
+      padding: 10px 0 2px;
+      border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
+      margin-top: 12px;
+    }
+
+    .secondary-row {
+      gap: 6px;
+    }
+
+    .topics-row,
+    .secondary-row:last-child {
+      margin-bottom: 12px;
     }
 
     .spark-wrap {
       display: inline-flex;
       align-items: center;
-      min-width: 72px;
+      justify-content: center;
+      min-width: 64px;
       min-height: 22px;
+      margin-left: auto;
     }
 
     .stat {
       display: inline-flex;
       align-items: center;
-      gap: 2px;
-      font-size: 13px;
+      gap: 4px;
+      font-size: 12px;
       color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
     }
 
+    .stat-primary {
+      font-weight: 600;
+      color: var(--mat-sys-on-surface, rgba(0, 0, 0, 0.87));
+    }
+
     .stat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
     }
 
     .health-chip,
@@ -305,7 +387,7 @@ import { SparklineComponent } from './sparkline.component';
     .archived-chip,
     .topic-chip {
       font-size: 11px;
-      min-height: 24px;
+      min-height: 22px;
       padding: 0 8px;
     }
 
@@ -335,6 +417,16 @@ import { SparklineComponent } from './sparkline.component';
     .topic-chip {
       background-color: color-mix(in srgb, #2196f3 14%, var(--mat-sys-surface, #fff)) !important;
       color: color-mix(in srgb, #1565c0 90%, var(--mat-sys-on-surface, #000));
+    }
+
+    .topic-chip-muted {
+      background-color: var(--mat-sys-surface-container, rgba(0, 0, 0, 0.04)) !important;
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.65));
+    }
+
+    .repo-card mat-card-actions {
+      border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
+      padding-top: 6px;
     }
 
     .star-btn,
@@ -395,6 +487,41 @@ export class RepoCardComponent implements AfterViewInit {
       risky: 'Risky',
     };
     return map[l] ?? l;
+  }
+
+  watchLabelTooltip(): string {
+    const l = this.repo().watchLabel;
+    const score = this.repo().watchScore;
+    const reasons = this.watchReasonsTooltip();
+
+    switch (l) {
+      case 'strong':
+        return `Strong: healthy watchlist candidate with good maintenance and signal${
+          score != null ? ` (score ${score})` : ''
+        }. ${reasons}`;
+      case 'watch':
+        return `Watch: promising, but still worth monitoring before relying on it${
+          score != null ? ` (score ${score})` : ''
+        }. ${reasons}`;
+      case 'cooling':
+        return `Cooling: mixed or weakening signals; double-check maintenance and momentum${
+          score != null ? ` (score ${score})` : ''
+        }. ${reasons}`;
+      case 'risky':
+        return `Risky: weaker signals or elevated risk such as stale activity, archive status, license, or issue load${
+          score != null ? ` (score ${score})` : ''
+        }. ${reasons}`;
+      default:
+        return reasons;
+    }
+  }
+
+  visibleTopics(): string[] {
+    return this.repo().topics.slice(0, 2);
+  }
+
+  hiddenTopicCount(): number {
+    return Math.max(0, this.repo().topics.length - 2);
   }
 
   ngAfterViewInit() {
