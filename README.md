@@ -2,6 +2,8 @@
 
 > Because [github.com/trending](https://github.com/trending) is great for a quick glance, but not enough when you want to **filter, track, score, and stay on top of** the repos that actually matter to you.
 
+> **Note:** This is an independent, self-hosted project and is **not affiliated with GitHub**.
+
 **Primary experience:** a self-hosted web app that supercharges GitHub’s trending page with persistent starring, release tracking, watchlist scoring, radar and galaxy discovery, a timeline of notable events, and more, built for **day-to-day use in the browser**.
 
 **Optional integration:** the same Next.js backend exposes **JSON HTTP APIs** you can call from scripts, [OpenClaw](https://github.com/openclaw/openclaw), or other tools. That layer is **additive**: the product is not an “AI tool,” but you can wire it up if you want. See **[API reference](docs/api.md)** and the **[OpenClaw example](docs/examples/openclaw/README.md)** (template skill you can copy).
@@ -10,8 +12,10 @@ No AI or assistants are required to use the app; they are optional if you want t
 
 **Why self-hosted?** You keep your own OAuth app, your own database, your own notes/presets, and your own automation hooks without depending on a hosted third-party service.
 
-🤖 **This project was built with heavy AI assistance.** I defined the product vision, core features, and technical direction, then used AI to speed up implementation and iteration.
+For operator responsibilities and data/token storage notes, see **[docs/self-hosted-notes.md](docs/self-hosted-notes.md)**.
 
+🤖 **This project was built with heavy AI assistance.** I defined the product vision, core features, and technical direction, then used AI to speed up implementation and iteration.
+ 
 ### Preview
 
 <p align="center">
@@ -224,6 +228,8 @@ libs/server        Backend domain libraries:
 - **Docker Desktop** (or Docker Engine + Compose v2)
 - A **GitHub OAuth App**: [create one here](https://github.com/settings/applications/new)
 
+  > **Every self-hosted instance uses its own GitHub OAuth App** -- your credentials never leave your machine and are not shared with other deployments.
+
   | Field                      | Value                                     |
   | -------------------------- | ----------------------------------------- |
   | Application name           | e.g. *Trending Explorer (local)*          |
@@ -337,9 +343,17 @@ No extra vendor keys beyond your own GitHub OAuth app for the web UI; agent toke
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! See **[CONTRIBUTING.md](CONTRIBUTING.md)** for guidelines.
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE)
+
+For self-hosted deployment notes covering branding, GitHub OAuth usage, stored data, and security checklist items, see **[docs/self-hosted-notes.md](docs/self-hosted-notes.md)**.
 
 ---
 
