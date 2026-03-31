@@ -1,5 +1,7 @@
 # Running GitHub Trending Explorer
 
+> This guide assumes **self-hosted** use. This project is **not affiliated with GitHub**. If you expose an instance beyond your own machine or team, use your own GitHub OAuth app, review GitHub's API/OAuth terms, and read **[self-hosted notes](self-hosted-notes.md)** first.
+
 ## Overview
 
 The app runs three services:
@@ -56,6 +58,8 @@ Node.js 22+ and npm 10+ are only needed if you plan to run locally without Docke
 
 6. You'll use both values in the `.env` file below
 
+Use an application name that avoids implying official GitHub affiliation. `Trending Explorer` is safer than a name that starts with `GitHub`.
+
 ### Required OAuth Scopes
 
 The app requests these scopes during login:
@@ -82,6 +86,20 @@ The app requests these scopes during login:
 | `DATABASE_URL`        | PostgreSQL connection string                   | `postgresql://trending:trending_pass@postgres:5432/github_trending` |
 | `NEXT_PUBLIC_APP_URL` | Frontend URL (for OAuth redirects)             | `http://localhost:4200`                                    |
 | `BACKEND_URL`         | Backend URL (for OAuth redirects)              | `http://localhost:3000`                                    |
+
+---
+
+## What your instance stores
+
+Depending on which features you use, your instance may store:
+
+- GitHub profile basics (`id`, username, avatar URL)
+- Encrypted GitHub OAuth access tokens
+- Session IDs in the database and `session_id` cookies in the browser
+- Followed repos, notes, filter presets, release cache, and timeline snapshots/events
+- Agent/API token hashes for automation access
+
+If other people will use your instance, make sure you are comfortable operating that data and providing a way to revoke tokens or remove stored data.
 
 ---
 
