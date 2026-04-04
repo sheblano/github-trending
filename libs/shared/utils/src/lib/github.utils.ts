@@ -1,9 +1,10 @@
-import { DateRange, RepoSortField, HealthStatus } from '@github-trending/shared/models';
+import { DateRange, RepoSortField, HealthStatus, TopicMatchMode } from '@github-trending/shared/models';
 import { getDateThreshold } from './date.utils';
 
 export function buildSearchQuery(params: {
   language?: string | null;
   topics?: string[];
+  topicMatchMode?: TopicMatchMode;
   dateRange?: DateRange;
   searchQuery?: string;
 }): string {
@@ -18,8 +19,14 @@ export function buildSearchQuery(params: {
   }
 
   if (params.topics?.length) {
-    for (const topic of params.topics) {
-      parts.push(`topic:${topic}`);
+    const mode = params.topicMatchMode ?? 'and';
+    if (mode === 'or' && params.topics.length > 1) {
+      const topicParts = params.topics.map((t) => `topic:${t}`);
+      parts.push(topicParts.join(' OR '));
+    } else {
+      for (const topic of params.topics) {
+        parts.push(`topic:${topic}`);
+      }
     }
   }
 

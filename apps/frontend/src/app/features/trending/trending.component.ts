@@ -46,6 +46,7 @@ import type {
   GitHubRepo,
   TrendingFilterPresetDto,
   TrendingViewMode,
+  TopicMatchMode,
 } from '@github-trending/shared/models';
 
 @Component({
@@ -145,6 +146,16 @@ import type {
             </mat-chip>
           }
         </mat-chip-set>
+        @if (store.topics().length > 1) {
+          <mat-button-toggle-group
+            class="topic-match-toggle"
+            [value]="store.topicMatchMode()"
+            (change)="setTopicMatchMode($event.value)"
+          >
+            <mat-button-toggle value="or">Any</mat-button-toggle>
+            <mat-button-toggle value="and">All</mat-button-toggle>
+          </mat-button-toggle-group>
+        }
       </div>
 
       <div class="controls-row">
@@ -301,6 +312,13 @@ import type {
       align-items: center;
       gap: 8px;
       margin-bottom: 12px;
+    }
+
+    .topic-match-toggle {
+      flex-shrink: 0;
+      margin-left: 4px;
+      --mat-standard-button-toggle-height: 28px;
+      font-size: 12px;
     }
 
     .chip-row.scrollable {
@@ -559,6 +577,12 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.store.loadRepos();
   }
 
+  setTopicMatchMode(mode: TopicMatchMode) {
+    this.scrollTrendingTop();
+    this.store.setTopicMatchMode(mode);
+    this.store.loadRepos();
+  }
+
   setDateRange(range: DateRange) {
     this.scrollTrendingTop();
     this.store.setDateRange(range);
@@ -592,6 +616,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     this.store.setSearchQuery('');
     this.store.setLanguage(f.language ?? null);
     this.store.setTopics([...(f.topics ?? [])]);
+    this.store.setTopicMatchMode(f.topicMatchMode ?? 'or');
     this.store.setDateRange(f.dateRange ?? 'weekly');
     this.store.setSort(f.sortBy ?? 'stars', f.order ?? 'desc');
     this.store.loadRepos();
@@ -614,6 +639,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
         void this.presetsStore.savePreset(name.trim(), {
           language: this.store.language(),
           topics: [...this.store.topics()],
+          topicMatchMode: this.store.topicMatchMode(),
           dateRange: this.store.dateRange(),
           sortBy: this.store.sortBy(),
           order: this.store.order(),

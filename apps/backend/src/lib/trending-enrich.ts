@@ -8,6 +8,7 @@ import type {
   RepoSortField,
   SortOrder,
   StarHistoryPoint,
+  TopicMatchMode,
 } from '@github-trending/shared/models';
 
 export async function loadStarHistoryMap(
@@ -53,6 +54,7 @@ export interface FetchTrendingParams {
   prisma: PrismaClient;
   language: string | null;
   topics: string[];
+  topicMatchMode?: TopicMatchMode;
   dateRange: DateRange;
   searchQuery: string;
   sortBy: RepoSortField;
@@ -68,6 +70,7 @@ export async function fetchEnrichedRepos(
   const query = buildSearchQuery({
     language: p.language,
     topics: p.topics,
+    topicMatchMode: p.topicMatchMode,
     dateRange: p.dateRange,
     searchQuery: p.searchQuery,
   });

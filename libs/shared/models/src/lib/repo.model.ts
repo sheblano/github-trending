@@ -52,6 +52,7 @@ export type DateRange = 'daily' | 'weekly' | 'monthly';
 export type RepoSortField = 'stars' | 'forks' | 'updated';
 export type SortOrder = 'asc' | 'desc';
 
+export type TopicMatchMode = 'or' | 'and';
 export type HealthStatus = 'healthy' | 'warning' | 'stale';
 
 export interface RepoHealthMetrics {

@@ -14,6 +14,7 @@ import type {
   TrendingViewMode,
   DiscoveryResponse,
   TopMoversResponse,
+  TopicMatchMode,
 } from '@github-trending/shared/models';
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +32,7 @@ export class ApiService {
   getTrending(filters: {
     language?: string | null;
     topics?: string[];
+    topicMatchMode?: TopicMatchMode;
     dateRange?: string;
     q?: string;
     sort?: string;
@@ -42,6 +44,9 @@ export class ApiService {
     let params = new HttpParams();
     if (filters.language) params = params.set('language', filters.language);
     if (filters.topics?.length) params = params.set('topics', filters.topics.join(','));
+    if (filters.topicMatchMode && filters.topicMatchMode !== 'or') {
+      params = params.set('topicMatchMode', filters.topicMatchMode);
+    }
     if (filters.dateRange) params = params.set('dateRange', filters.dateRange);
     if (filters.q) params = params.set('q', filters.q);
     if (filters.sort) params = params.set('sort', filters.sort);
