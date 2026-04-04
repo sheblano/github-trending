@@ -64,42 +64,80 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
             {{ repo().description || 'No description' }}
           </mat-card-subtitle>
         </div>
+        <span
+          class="age-chip"
+          [matTooltip]="'Created ' + repo().created_at.split('T')[0]"
+        >
+          <mat-icon class="age-icon">cake</mat-icon>
+          {{ formatDate(repo().created_at) }}
+        </span>
       </mat-card-header>
 
       <mat-card-content>
-        <div class="signal-row">
-          @if (repo().watchScore !== null && repo().watchScore !== undefined) {
-            <span
-              class="watch-score"
-              [matTooltip]="watchReasonsTooltip()"
-              [appAnimateCount]="repo().watchScore!"
-            ></span>
-            <mat-chip
-              [class]="'watch-label-chip ' + watchLabelClass()"
-              [matTooltip]="watchLabelTooltip()"
-            >
-              {{ watchLabelDisplay() }}
-            </mat-chip>
-          }
-          @if (radarMode() && repo().radarRank !== null && repo().radarRank !== undefined) {
-            <mat-chip class="radar-rank-chip" matTooltip="Radar rank (this page)">
-              #{{ repo().radarRank }}
-            </mat-chip>
-          }
-          @if (repo().language) {
-            <mat-chip class="lang-chip">{{ repo().language }}</mat-chip>
-          }
-          @if (authStore.isAuthenticated()) {
-            <span class="spark-wrap" matTooltip="Star growth (weekly, sampled)">
-              @if (starHistoryLoading()) {
-                <mat-progress-spinner diameter="18" mode="indeterminate" />
-              } @else if (starHistory(); as h) {
-                @if (h.length > 1) {
-                  <app-sparkline [points]="h" />
+        <div class="meta-row">
+          <div class="signal-group">
+            @if (repo().watchScore !== null && repo().watchScore !== undefined) {
+              <span
+                class="watch-score"
+                [matTooltip]="watchReasonsTooltip()"
+                [appAnimateCount]="repo().watchScore!"
+              ></span>
+              <mat-chip
+                [class]="'watch-label-chip ' + watchLabelClass()"
+                [matTooltip]="watchLabelTooltip()"
+              >
+                {{ watchLabelDisplay() }}
+              </mat-chip>
+            }
+            @if (radarMode() && repo().radarRank !== null && repo().radarRank !== undefined) {
+              <mat-chip class="radar-rank-chip" matTooltip="Radar rank (this page)">
+                #{{ repo().radarRank }}
+              </mat-chip>
+            }
+            @if (repo().language) {
+              <mat-chip class="lang-chip">{{ repo().language }}</mat-chip>
+            }
+            @if (authStore.isAuthenticated()) {
+              <span class="spark-wrap" matTooltip="Star growth (weekly, sampled)">
+                @if (starHistoryLoading()) {
+                  <mat-progress-spinner diameter="18" mode="indeterminate" />
+                } @else if (starHistory(); as h) {
+                  @if (h.length > 1) {
+                    <app-sparkline [points]="h" />
+                  }
                 }
-              }
+              </span>
+            }
+          </div>
+
+          <div class="badge-group">
+            @if (radarMode() && (repo().radarReasons?.length ?? 0) > 0) {
+              <span class="badge badge-radar" [matTooltip]="radarReasonsTooltip()">
+                {{ repo().radarReasons![0] }}
+              </span>
+            }
+            <span
+              class="badge"
+              [class.badge-healthy]="commitRecency() === 'healthy'"
+              [class.badge-warning]="commitRecency() === 'warning'"
+              [class.badge-stale]="commitRecency() === 'stale'"
+              matTooltip="Last commit"
+            >
+              {{ commitRecency() === 'healthy' ? 'Active' : commitRecency() === 'warning' ? 'Slowing' : 'Stale' }}
             </span>
-          }
+            @if (repo().license) {
+              <span class="badge badge-license" [matTooltip]="repo().license!.spdx_id">
+                {{ licenseDisplay() }}
+              </span>
+            } @else {
+              <span class="badge badge-no-license" matTooltip="No license">
+                No License
+              </span>
+            }
+            @if (repo().archived) {
+              <span class="badge badge-archived">Archived</span>
+            }
+          </div>
         </div>
 
         <div class="stats-row">
@@ -125,53 +163,20 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
             <mat-icon class="stat-icon">schedule</mat-icon>
             {{ formatDate(repo().pushed_at) }}
           </span>
-          <mat-chip
-            class="age-chip"
-            [matTooltip]="'Created ' + repo().created_at.split('T')[0]"
-          >
-            <mat-icon class="age-icon">cake</mat-icon>
-            {{ formatDate(repo().created_at) }}
-          </mat-chip>
-        </div>
-
-        <div class="secondary-row">
-          @if (radarMode() && (repo().radarReasons?.length ?? 0) > 0) {
-            <mat-chip class="radar-reason-chip" [matTooltip]="radarReasonsTooltip()">
-              {{ repo().radarReasons![0] }}
-            </mat-chip>
-          }
-          <mat-chip
-            [class]="'health-' + commitRecency()"
-            class="health-chip"
-            matTooltip="Last commit"
-          >
-            {{ commitRecency() === 'healthy' ? 'Active' : commitRecency() === 'warning' ? 'Slowing' : 'Stale' }}
-          </mat-chip>
-
-          @if (repo().license) {
-            <mat-chip class="license-chip" matTooltip="License">
-              {{ repo().license!.spdx_id }}
-            </mat-chip>
-          } @else {
-            <mat-chip class="no-license-chip" matTooltip="No license">
-              No License
-            </mat-chip>
-          }
-
-          @if (repo().archived) {
-            <mat-chip class="archived-chip">Archived</mat-chip>
-          }
         </div>
 
         @if (repo().topics.length > 0) {
           <div class="topics-row">
             @for (topic of visibleTopics(); track topic) {
-              <mat-chip class="topic-chip">{{ topic }}</mat-chip>
+              <span class="badge badge-topic">{{ topic }}</span>
             }
             @if (hiddenTopicCount() > 0) {
-              <mat-chip class="topic-chip topic-chip-muted">
+              <span
+                class="badge badge-topic badge-topic-muted"
+                [matTooltip]="hiddenTopicsTooltip()"
+              >
                 +{{ hiddenTopicCount() }} more
-              </mat-chip>
+              </span>
             }
           </div>
         }
@@ -236,6 +241,7 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       align-items: flex-start;
       gap: 12px;
       margin-bottom: 4px;
+      position: relative;
     }
 
     .repo-card mat-card-actions {
@@ -267,7 +273,6 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       -webkit-line-clamp: 3;
       overflow: hidden;
       line-height: 1.45;
-      min-height: calc(1.45em * 2);
       color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.65));
     }
 
@@ -338,35 +343,48 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       text-decoration: underline;
     }
 
-    .signal-row,
-    .stats-row,
-    .secondary-row,
-    .topics-row {
+    .meta-row {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       margin-top: 10px;
     }
 
-    .signal-row {
+    .signal-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
       min-height: 28px;
     }
 
+    .badge-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
     .stats-row {
-      padding: 10px 0 2px;
-      border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.08));
-      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding-bottom: 4px;
+      margin-left: auto;
+      justify-content: flex-end;
     }
 
-    .secondary-row {
+    .topics-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
-    }
-
-    .topics-row,
-    .secondary-row:last-child {
-      margin-bottom: 12px;
+      margin-top: 8px;
+      padding-bottom: 8px;
     }
 
     .spark-wrap {
@@ -397,64 +415,98 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       height: 15px;
     }
 
-    .health-chip,
-    .lang-chip,
-    .license-chip,
-    .no-license-chip,
-    .archived-chip,
-    .topic-chip {
+    .lang-chip {
       font-size: 11px;
       min-height: 22px;
       padding: 0 8px;
     }
 
-    .health-healthy {
-      background-color: color-mix(in srgb, #4caf50 18%, var(--mat-sys-surface, #fff)) !important;
+    /* Lightweight inline badges for the secondary row */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-healthy {
+      background: color-mix(in srgb, #4caf50 10%, transparent);
       color: color-mix(in srgb, #2e7d32 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #4caf50 25%, transparent);
     }
-    .health-warning {
-      background-color: color-mix(in srgb, #ff9800 18%, var(--mat-sys-surface, #fff)) !important;
+    .badge-warning {
+      background: color-mix(in srgb, #ff9800 10%, transparent);
       color: color-mix(in srgb, #e65100 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #ff9800 25%, transparent);
     }
-    .health-stale {
-      background-color: color-mix(in srgb, #f44336 18%, var(--mat-sys-surface, #fff)) !important;
+    .badge-stale {
+      background: color-mix(in srgb, #f44336 10%, transparent);
       color: color-mix(in srgb, #c62828 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #f44336 25%, transparent);
     }
-
-    .no-license-chip {
-      background-color: color-mix(in srgb, #ff9800 18%, var(--mat-sys-surface, #fff)) !important;
+    .badge-license {
+      background: color-mix(in srgb, var(--mat-sys-on-surface, #000) 5%, transparent);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+      border-color: color-mix(in srgb, var(--mat-sys-on-surface, #000) 12%, transparent);
+    }
+    .badge-no-license {
+      background: color-mix(in srgb, #ff9800 10%, transparent);
       color: color-mix(in srgb, #e65100 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #ff9800 25%, transparent);
     }
-
-    .archived-chip {
-      background-color: color-mix(in srgb, #f44336 18%, var(--mat-sys-surface, #fff)) !important;
+    .badge-archived {
+      background: color-mix(in srgb, #f44336 10%, transparent);
       color: color-mix(in srgb, #c62828 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #f44336 25%, transparent);
+    }
+    .badge-radar {
+      background: color-mix(in srgb, #7c4dff 8%, transparent);
+      color: color-mix(in srgb, #4527a0 90%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #7c4dff 20%, transparent);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .topic-chip {
-      background-color: color-mix(in srgb, #2196f3 14%, var(--mat-sys-surface, #fff)) !important;
-      color: color-mix(in srgb, #1565c0 90%, var(--mat-sys-on-surface, #000));
+    .badge-topic {
+      background: color-mix(in srgb, #2196f3 8%, transparent);
+      color: color-mix(in srgb, #1565c0 85%, var(--mat-sys-on-surface, #000));
+      border-color: color-mix(in srgb, #2196f3 18%, transparent);
+    }
+    .badge-topic-muted {
+      background: color-mix(in srgb, var(--mat-sys-on-surface, #000) 4%, transparent);
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.55));
+      border-color: color-mix(in srgb, var(--mat-sys-on-surface, #000) 10%, transparent);
     }
 
     .age-chip {
-      font-size: 11px;
-      min-height: 22px;
-      padding: 0 8px;
-      margin-left: auto;
-      background: color-mix(in srgb, var(--mat-sys-tertiary, #795548) 12%, var(--mat-sys-surface, #fff)) !important;
-      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: inline-flex;
+      align-items: center;
+      font-size: 9px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--mat-sys-tertiary, #795548) 10%, var(--mat-sys-surface, #fff));
+      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.55));
+      letter-spacing: 0.02em;
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .age-icon {
-      font-size: 13px;
-      width: 13px;
-      height: 13px;
-      margin-right: 3px;
-    }
-
-    .topic-chip-muted {
-      background-color: var(--mat-sys-surface-container, rgba(0, 0, 0, 0.04)) !important;
-      color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.65));
+      font-size: 11px;
+      width: 11px;
+      height: 11px;
+      margin-right: 2px;
     }
 
     .repo-card mat-card-actions {
@@ -464,8 +516,8 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
 
     .star-btn,
     .preview-btn {
-      min-width: 48px;
-      min-height: 48px;
+      min-width: 40px;
+      min-height: 40px;
     }
   `,
 })
@@ -549,12 +601,22 @@ export class RepoCardComponent implements AfterViewInit {
     }
   }
 
+  licenseDisplay(): string {
+    const id = this.repo().license?.spdx_id;
+    if (!id || id === 'NOASSERTION') return 'Custom';
+    return id;
+  }
+
   visibleTopics(): string[] {
     return this.repo().topics.slice(0, 2);
   }
 
   hiddenTopicCount(): number {
     return Math.max(0, this.repo().topics.length - 2);
+  }
+
+  hiddenTopicsTooltip(): string {
+    return this.repo().topics.slice(2).join(', ');
   }
 
   ngAfterViewInit() {

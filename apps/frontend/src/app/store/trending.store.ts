@@ -13,6 +13,7 @@ import type {
   RepoSortField,
   SortOrder,
   TrendingViewMode,
+  TopicMatchMode,
 } from '@github-trending/shared/models';
 
 interface TrendingStateModel {
@@ -20,6 +21,7 @@ interface TrendingStateModel {
   totalCount: number;
   language: string | null;
   topics: string[];
+  topicMatchMode: TopicMatchMode;
   dateRange: DateRange;
   searchQuery: string;
   sortBy: RepoSortField;
@@ -37,6 +39,7 @@ const initialState: TrendingStateModel = {
   totalCount: 0,
   language: null,
   topics: [],
+  topicMatchMode: 'or',
   dateRange: 'weekly',
   searchQuery: '',
   sortBy: 'stars',
@@ -63,6 +66,7 @@ export const TrendingStore = signalStore(
     const fetchParams = () => ({
       language: store.language(),
       topics: store.topics(),
+      topicMatchMode: store.topicMatchMode(),
       dateRange: store.dateRange(),
       q: store.searchQuery(),
       sort: store.sortBy(),
@@ -129,6 +133,9 @@ export const TrendingStore = signalStore(
       },
       setTopics(topics: string[]) {
         patchState(store, { topics, page: 1 });
+      },
+      setTopicMatchMode(topicMatchMode: TopicMatchMode) {
+        patchState(store, { topicMatchMode, page: 1 });
       },
       setDateRange(dateRange: DateRange) {
         patchState(store, { dateRange, page: 1 });

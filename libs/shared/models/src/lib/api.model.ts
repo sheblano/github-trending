@@ -1,10 +1,11 @@
-import type { DateRange, RepoSortField, SortOrder } from './repo.model';
+import type { DateRange, RepoSortField, SortOrder, TopicMatchMode } from './repo.model';
 import { GitHubRepo } from './repo.model';
 import { Release } from './release.model';
 
 export interface TrendingFiltersSnapshot {
   language: string | null;
   topics: string[];
+  topicMatchMode?: TopicMatchMode;
   dateRange: DateRange;
   sortBy: RepoSortField;
   order: SortOrder;

@@ -9,6 +9,7 @@ import type {
   RepoSortField,
   SortOrder,
   TrendingViewMode,
+  TopicMatchMode,
 } from '@github-trending/shared/models';
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   const language = searchParams.get('language') || null;
   const topicsParam = searchParams.get('topics');
   const topics = topicsParam ? topicsParam.split(',') : [];
+  const topicMatchMode = (searchParams.get('topicMatchMode') || 'or') as TopicMatchMode;
   const dateRange = (searchParams.get('dateRange') || 'weekly') as DateRange;
   const searchQuery = searchParams.get('q') || '';
   const sortBy = (searchParams.get('sort') || 'stars') as RepoSortField;
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const cacheKey = `${language}:${topics.join(',')}:${dateRange}:${searchQuery}:${sortBy}:${order}:${page}:${perPage}:${viewMode}`;
+  const cacheKey = `${language}:${topics.join(',')}:${topicMatchMode}:${dateRange}:${searchQuery}:${sortBy}:${order}:${page}:${perPage}:${viewMode}`;
   if (!token) {
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -51,6 +53,7 @@ export async function GET(request: Request) {
     prisma,
     language,
     topics,
+    topicMatchMode,
     dateRange,
     searchQuery,
     sortBy,
