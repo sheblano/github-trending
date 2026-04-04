@@ -97,17 +97,6 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
             @if (repo().language) {
               <mat-chip class="lang-chip">{{ repo().language }}</mat-chip>
             }
-            @if (authStore.isAuthenticated()) {
-              <span class="spark-wrap" matTooltip="Star growth (weekly, sampled)">
-                @if (starHistoryLoading()) {
-                  <mat-progress-spinner diameter="18" mode="indeterminate" />
-                } @else if (starHistory(); as h) {
-                  @if (h.length > 1) {
-                    <app-sparkline [points]="h" />
-                  }
-                }
-              </span>
-            }
           </div>
 
           <div class="badge-group">
@@ -148,6 +137,17 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
               [appAnimateCountFormat]="formatStars"
             ></span>
           </span>
+          @if (authStore.isAuthenticated()) {
+            <span class="spark-wrap" matTooltip="Star growth (weekly, sampled)">
+              @if (starHistoryLoading()) {
+                <mat-progress-spinner diameter="16" mode="indeterminate" />
+              } @else if (starHistory(); as h) {
+                @if (h.length > 1) {
+                  <app-sparkline [points]="h" />
+                }
+              }
+            </span>
+          }
           <span class="stat" matTooltip="Forks">
             <mat-icon class="stat-icon">call_split</mat-icon>
             <span
@@ -371,11 +371,9 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       margin-top: 6px;
       padding-bottom: 4px;
-      margin-left: auto;
-      justify-content: flex-end;
     }
 
     .topics-row {
@@ -391,9 +389,8 @@ import { AnimateCountDirective } from '../directives/animate-count.directive';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 64px;
-      min-height: 22px;
-      margin-left: auto;
+      min-width: 56px;
+      min-height: 20px;
     }
 
     .stat {
