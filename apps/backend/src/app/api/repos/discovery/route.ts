@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     token,
   });
 
-  let repos: GitHubRepo[] = [...enriched].sort((a, b) => {
+  const repos: GitHubRepo[] = [...enriched].sort((a, b) => {
     const rb = b.radarScore ?? 0;
     const ra = a.radarScore ?? 0;
     if (rb !== ra) return rb - ra;
