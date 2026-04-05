@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -112,6 +113,7 @@ import type { GitHubRepo } from '@github-trending/shared/models';
 export class ReadmeDrawerComponent {
   private api = inject(ApiService);
   private sanitizer = inject(DomSanitizer);
+  private destroyRef = inject(DestroyRef);
 
   open = signal(false);
   repo = signal<GitHubRepo | null>(null);
@@ -123,7 +125,10 @@ export class ReadmeDrawerComponent {
     this.open.set(true);
     this.loading.set(true);
     this.safeHtml.set(null);
-    this.api.getReadme(r.owner.login, r.name).subscribe({
+    this.api
+      .getReadme(r.owner.login, r.name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         const html =
           res.html?.trim() ||

@@ -17,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type { GitHubRepo, StarHistoryPoint } from '@github-trending/shared/models';
 import { formatStarCount, getCommitRecency } from '@github-trending/shared/utils';
 import { formatRelativeDate } from '@github-trending/shared/utils';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
 import { AuthStore } from '../../store/auth.store';
 import { SparklineComponent } from './sparkline.component';
@@ -627,7 +628,10 @@ export class RepoCardComponent implements AfterViewInit {
         }
         const r = this.repo();
         this.starHistoryLoading.set(true);
-        this.api.getStarHistory(r.owner.login, r.name).subscribe({
+        this.api
+          .getStarHistory(r.owner.login, r.name)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
           next: (res) => {
             this.starHistory.set(res.history ?? []);
             this.starHistoryLoading.set(false);

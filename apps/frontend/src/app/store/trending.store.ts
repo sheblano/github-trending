@@ -1,4 +1,5 @@
 import { computed, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   signalStore,
   withState,
@@ -75,29 +76,27 @@ export const TrendingStore = signalStore(
       viewMode: store.viewMode(),
     });
     return {
-      async loadRepos() {
+      async loadRepos(): Promise<void> {
         patchState(store, { loading: true, page: 1 });
         try {
-          const res = await api
-            .getTrending({
+          const res = await firstValueFrom(
+            api.getTrending({
               ...fetchParams(),
               page: 1,
             })
-            .toPromise();
-          if (res) {
-            patchState(store, {
-              repos: res.repos,
-              totalCount: res.totalCount,
-              page: 1,
-              loading: false,
-              loadingMore: false,
-            });
-          }
+          );
+          patchState(store, {
+            repos: res.repos,
+            totalCount: res.totalCount,
+            page: 1,
+            loading: false,
+            loadingMore: false,
+          });
         } catch {
           patchState(store, { loading: false });
         }
       },
-      async loadMore() {
+      async loadMore(): Promise<void> {
         if (
           store.loading() ||
           store.loadingMore() ||
@@ -108,61 +107,57 @@ export const TrendingStore = signalStore(
         const nextPage = store.page() + 1;
         patchState(store, { loadingMore: true });
         try {
-          const res = await api
-            .getTrending({
+          const res = await firstValueFrom(
+            api.getTrending({
               ...fetchParams(),
               page: nextPage,
             })
-            .toPromise();
-          if (res) {
-            patchState(store, {
-              repos: [...store.repos(), ...res.repos],
-              totalCount: res.totalCount,
-              page: nextPage,
-              loadingMore: false,
-            });
-          } else {
-            patchState(store, { loadingMore: false });
-          }
+          );
+          patchState(store, {
+            repos: [...store.repos(), ...res.repos],
+            totalCount: res.totalCount,
+            page: nextPage,
+            loadingMore: false,
+          });
         } catch {
           patchState(store, { loadingMore: false });
         }
       },
-      setLanguage(language: string | null) {
+      setLanguage(language: string | null): void {
         patchState(store, { language, page: 1 });
       },
-      setTopics(topics: string[]) {
+      setTopics(topics: string[]): void {
         patchState(store, { topics, page: 1 });
       },
-      setTopicMatchMode(topicMatchMode: TopicMatchMode) {
+      setTopicMatchMode(topicMatchMode: TopicMatchMode): void {
         patchState(store, { topicMatchMode, page: 1 });
       },
-      setDateRange(dateRange: DateRange) {
+      setDateRange(dateRange: DateRange): void {
         patchState(store, { dateRange, page: 1 });
       },
-      setSearchQuery(searchQuery: string) {
+      setSearchQuery(searchQuery: string): void {
         patchState(store, { searchQuery, page: 1 });
       },
-      setSort(sortBy: RepoSortField, order: SortOrder) {
+      setSort(sortBy: RepoSortField, order: SortOrder): void {
         patchState(store, { sortBy, order, page: 1 });
       },
-      setViewMode(viewMode: TrendingViewMode) {
+      setViewMode(viewMode: TrendingViewMode): void {
         patchState(store, { viewMode, page: 1 });
       },
-      setPage(page: number) {
+      setPage(page: number): void {
         patchState(store, { page });
       },
-      markStarred(repoId: number) {
+      markStarred(repoId: number): void {
         const ids = new Set(store.starredRepoIds());
         ids.add(repoId);
         patchState(store, { starredRepoIds: ids });
       },
-      markUnstarred(repoId: number) {
+      markUnstarred(repoId: number): void {
         const ids = new Set(store.starredRepoIds());
         ids.delete(repoId);
         patchState(store, { starredRepoIds: ids });
       },
-      loadStarredIds(ids: number[]) {
+      loadStarredIds(ids: number[]): void {
         patchState(store, { starredRepoIds: new Set(ids) });
       },
     };

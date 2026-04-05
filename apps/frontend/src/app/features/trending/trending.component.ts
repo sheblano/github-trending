@@ -7,8 +7,9 @@ import {
   signal,
   effect,
   ElementRef,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,8 +23,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { EMPTY, Subject } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+} from 'rxjs/operators';
 import { TrendingStore } from '../../store/trending.store';
 import { AuthStore } from '../../store/auth.store';
 import { ApiService } from '../../core/api.service';
@@ -478,35 +483,47 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   isMobile = signal(false);
   searchValue = '';
 
-  @ViewChild('scrollRoot') scrollRoot?: ElementRef<HTMLElement>;
-  @ViewChild('loadMoreSentinel') sentinel?: ElementRef<HTMLElement>;
-  @ViewChild('readmeDrawer') readmeDrawer?: ReadmeDrawerComponent;
+  scrollRoot = viewChild<ElementRef<HTMLElement>>('scrollRoot');
+  sentinel = viewChild<ElementRef<HTMLElement>>('loadMoreSentinel');
+  readmeDrawer = viewChild(ReadmeDrawerComponent);
 
   private intersectionObserver?: IntersectionObserver;
 
   languages = LANGUAGES;
   topics = TOPICS;
   constructor() {
-    this.bp.observe([Breakpoints.Handset]).subscribe((r) => {
-      this.isMobile.set(r.matches);
-    });
+    this.bp
+      .observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed())
+      .subscribe((r) => {
+        this.isMobile.set(r.matches);
+      });
 
     this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
       .subscribe((q) => {
         this.scrollTrendingTop();
         this.store.setSearchQuery(q);
         this.store.loadRepos();
       });
 
+    toObservable(this.authStore.isAuthenticated)
+      .pipe(
+        switchMap((authed) => (authed ? this.api.getStarred() : EMPTY)),
+        takeUntilDestroyed()
+      )
+      .subscribe((res) => {
+        this.store.loadStarredIds(
+          res.starred.map((r) => r.githubRepoId)
+        );
+      });
+
     effect(() => {
-      if (this.authStore.isAuthenticated()) {
-        this.api.getStarred().subscribe((res) => {
-          this.store.loadStarredIds(
-            res.starred.map((r) => r.githubRepoId)
-          );
-        });
-      }
+      this.authStore.isAuthenticated();
       void this.presetsStore.load();
     });
 
@@ -532,8 +549,8 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private setupIntersectionObserver() {
     this.intersectionObserver?.disconnect();
-    const el = this.sentinel?.nativeElement;
-    const root = this.scrollRoot?.nativeElement;
+    const el = this.sentinel()?.nativeElement;
+    const root = this.scrollRoot()?.nativeElement;
     if (!el || !root) {
       return;
     }
@@ -549,7 +566,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private scrollTrendingTop() {
-    this.scrollRoot?.nativeElement?.scrollTo({ top: 0, behavior: 'auto' });
+    this.scrollRoot()?.nativeElement?.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   formatStars(value: number): string {
@@ -634,6 +651,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
         data: {},
       })
       .afterClosed()
+      .pipe(takeUntilDestroyed())
       .subscribe((name) => {
         if (!name?.trim()) return;
         void this.presetsStore.savePreset(name.trim(), {
@@ -702,7 +720,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
       data: {
         insight,
         onReadme: () => {
-          const drawer = this.readmeDrawer;
+          const drawer = this.readmeDrawer();
           if (drawer) {
             this.openReadmeFromPanelData(drawer, insight);
           }
@@ -747,9 +765,12 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.store.starredRepoIds().has(repo.id)) {
-      this.api.unstarRepo(repo.owner.login, repo.name).subscribe(() => {
-        this.store.markUnstarred(repo.id);
-      });
+      this.api
+        .unstarRepo(repo.owner.login, repo.name)
+        .pipe(takeUntilDestroyed())
+        .subscribe(() => {
+          this.store.markUnstarred(repo.id);
+        });
     } else {
       this.api
         .starRepo({
@@ -762,6 +783,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
           starsCount: repo.stargazers_count,
           url: repo.html_url,
         })
+        .pipe(takeUntilDestroyed())
         .subscribe(() => {
           this.store.markStarred(repo.id);
         });

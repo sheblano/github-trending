@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { LANGUAGES, formatStarCount } from '@github-trending/shared/utils';
@@ -479,8 +480,8 @@ export class GalaxyComponent implements OnInit {
     this.loading.set(true);
     this.selected.set(null);
     try {
-      const res = await this.api
-        .getDiscovery({
+      const res = await firstValueFrom(
+        this.api.getDiscovery({
           language: this.language(),
           dateRange: this.dateRange(),
           perPage: 60,
@@ -488,8 +489,8 @@ export class GalaxyComponent implements OnInit {
           order: 'desc',
           page: 1,
         })
-        .toPromise();
-      this.nodes.set(normalizeNodes(res?.nodes ?? []));
+      );
+      this.nodes.set(normalizeNodes(res.nodes ?? []));
     } catch {
       this.nodes.set([]);
     } finally {

@@ -7,6 +7,7 @@ import {
   ElementRef,
   viewChild,
   AfterViewInit,
+  DestroyRef,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +24,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StarredStore } from '../../store/starred.store';
 import { TrendingStore } from '../../store/trending.store';
 import { formatRelativeDate, formatStarCount } from '@github-trending/shared/utils';
@@ -305,6 +307,7 @@ export class StarredComponent implements OnInit, AfterViewInit, OnDestroy {
   store = inject(StarredStore);
   private trendingStore = inject(TrendingStore);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
   isMobile = signal(false);
   selectedTab = signal(0);
 
@@ -318,19 +321,23 @@ export class StarredComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor() {
     const bp = inject(BreakpointObserver);
-    bp.observe([Breakpoints.Handset]).subscribe((r) => {
-      this.isMobile.set(r.matches);
-    });
+    bp.observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed())
+      .subscribe((r) => {
+        this.isMobile.set(r.matches);
+      });
   }
 
   ngOnInit() {
     this.store.loadStarred();
-    this.route.queryParams.pipe(take(1)).subscribe((q) => {
-      if (q['tab'] === 'releases') {
-        this.selectedTab.set(1);
-        this.store.loadReleases();
-      }
-    });
+    this.route.queryParams
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((q) => {
+        if (q['tab'] === 'releases') {
+          this.selectedTab.set(1);
+          this.store.loadReleases();
+        }
+      });
   }
 
   ngAfterViewInit() {

@@ -1,4 +1,12 @@
-import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -268,11 +276,12 @@ import type {
 export class MoversComponent implements OnInit {
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
   data = signal<TopMoversResponse | null>(null);
   loading = signal(true);
   formatDate = formatRelativeDate;
 
-  @ViewChild('readmeDrawer') readmeDrawer?: ReadmeDrawerComponent;
+  readmeDrawer = viewChild(ReadmeDrawerComponent);
 
   ngOnInit(): void {
     this.load();
@@ -323,7 +332,7 @@ export class MoversComponent implements OnInit {
       data: {
         insight,
         onReadme: () => {
-          const drawer = this.readmeDrawer;
+          const drawer = this.readmeDrawer();
           if (drawer) {
             this.openReadmeFromPanelData(drawer, insight);
           }
@@ -364,7 +373,7 @@ export class MoversComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.getMovers().subscribe({
+    this.api.getMovers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.data.set(res);
         this.loading.set(false);

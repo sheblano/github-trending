@@ -1,4 +1,5 @@
 import { inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   signalStore,
   withState,
@@ -46,13 +47,13 @@ export const PresetsStore = signalStore(
     const api = inject(ApiService);
     const auth = inject(AuthStore);
     return {
-      async load() {
+      async load(): Promise<void> {
         patchState(store, { loading: true });
         try {
           if (auth.isAuthenticated()) {
-            const res = await api.getPresets().toPromise();
+            const res = await firstValueFrom(api.getPresets());
             patchState(store, {
-              presets: res?.presets ?? [],
+              presets: res.presets ?? [],
               loading: false,
             });
           } else {
@@ -62,11 +63,11 @@ export const PresetsStore = signalStore(
           patchState(store, { presets: readLocal(), loading: false });
         }
       },
-      async savePreset(name: string, filters: TrendingFiltersSnapshot) {
+      async savePreset(name: string, filters: TrendingFiltersSnapshot): Promise<void> {
         if (auth.isAuthenticated()) {
           try {
-            const res = await api.createPreset(name, filters).toPromise();
-            if (res?.preset) {
+            const res = await firstValueFrom(api.createPreset(name, filters));
+            if (res.preset) {
               patchState(store, {
                 presets: [res.preset, ...store.presets()],
               });
@@ -85,10 +86,10 @@ export const PresetsStore = signalStore(
           writeLocal(next);
         }
       },
-      async deletePreset(id: number) {
+      async deletePreset(id: number): Promise<void> {
         if (auth.isAuthenticated()) {
           try {
-            await api.deletePreset(id).toPromise();
+            await firstValueFrom(api.deletePreset(id));
             patchState(store, {
               presets: store.presets().filter((p) => p.id !== id),
             });

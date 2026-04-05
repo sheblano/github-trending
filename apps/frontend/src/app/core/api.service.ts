@@ -17,12 +17,49 @@ import type {
   TopicMatchMode,
 } from '@github-trending/shared/models';
 
+export interface AuthMeResponse {
+  user: {
+    id: number;
+    githubId: number;
+    username: string;
+    avatarUrl: string | null;
+  } | null;
+}
+
+/** Shared query keys for trending and discovery list endpoints. */
+interface RepoListQueryFilters {
+  language?: string | null;
+  topics?: string[];
+  dateRange?: string;
+  q?: string;
+  sort?: string;
+  order?: string;
+  page?: number;
+  perPage?: number;
+}
+
+function appendRepoListQueryParams(
+  params: HttpParams,
+  filters: RepoListQueryFilters
+): HttpParams {
+  let p = params;
+  if (filters.language) p = p.set('language', filters.language);
+  if (filters.topics?.length) p = p.set('topics', filters.topics.join(','));
+  if (filters.dateRange) p = p.set('dateRange', filters.dateRange);
+  if (filters.q) p = p.set('q', filters.q);
+  if (filters.sort) p = p.set('sort', filters.sort);
+  if (filters.order) p = p.set('order', filters.order);
+  if (filters.page) p = p.set('page', String(filters.page));
+  if (filters.perPage) p = p.set('perPage', String(filters.perPage));
+  return p;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
 
-  getMe(): Observable<{ user: { id: number; githubId: number; username: string; avatarUrl: string | null } | null }> {
-    return this.http.get<any>('/api/auth/me');
+  getMe(): Observable<AuthMeResponse> {
+    return this.http.get<AuthMeResponse>('/api/auth/me');
   }
 
   logout(): Observable<{ ok: boolean }> {
@@ -41,18 +78,10 @@ export class ApiService {
     perPage?: number;
     viewMode?: TrendingViewMode;
   }): Observable<TrendingResponse> {
-    let params = new HttpParams();
-    if (filters.language) params = params.set('language', filters.language);
-    if (filters.topics?.length) params = params.set('topics', filters.topics.join(','));
+    let params = appendRepoListQueryParams(new HttpParams(), filters);
     if (filters.topicMatchMode && filters.topicMatchMode !== 'or') {
       params = params.set('topicMatchMode', filters.topicMatchMode);
     }
-    if (filters.dateRange) params = params.set('dateRange', filters.dateRange);
-    if (filters.q) params = params.set('q', filters.q);
-    if (filters.sort) params = params.set('sort', filters.sort);
-    if (filters.order) params = params.set('order', filters.order);
-    if (filters.page) params = params.set('page', String(filters.page));
-    if (filters.perPage) params = params.set('perPage', String(filters.perPage));
     if (filters.viewMode && filters.viewMode !== 'default') {
       params = params.set('viewMode', filters.viewMode);
     }
@@ -69,15 +98,7 @@ export class ApiService {
     page?: number;
     perPage?: number;
   }): Observable<DiscoveryResponse> {
-    let params = new HttpParams();
-    if (filters.language) params = params.set('language', filters.language);
-    if (filters.topics?.length) params = params.set('topics', filters.topics.join(','));
-    if (filters.dateRange) params = params.set('dateRange', filters.dateRange);
-    if (filters.q) params = params.set('q', filters.q);
-    if (filters.sort) params = params.set('sort', filters.sort);
-    if (filters.order) params = params.set('order', filters.order);
-    if (filters.page) params = params.set('page', String(filters.page));
-    if (filters.perPage) params = params.set('perPage', String(filters.perPage));
+    const params = appendRepoListQueryParams(new HttpParams(), filters);
     return this.http.get<DiscoveryResponse>('/api/repos/discovery', { params });
   }
 

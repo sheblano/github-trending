@@ -3,5 +3,5 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/server/timeline/src",
   "projectType": "library",
-  "tags": []
+  "tags": ["type:server-lib", "scope:server"]
 }

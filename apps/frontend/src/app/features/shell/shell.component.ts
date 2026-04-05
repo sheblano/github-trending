@@ -1,4 +1,5 @@
-import { Component, inject, effect } from '@angular/core';
+import { Component, inject, effect, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   RouterOutlet,
   RouterLink,
@@ -44,7 +45,7 @@ import { ThemeStore } from '../../store/theme.store';
 
       <span class="spacer"></span>
 
-      @if (!isMobile) {
+      @if (!isMobile()) {
         <nav class="nav-links">
           <a mat-button routerLink="/trending" routerLinkActive="active-link">
             <mat-icon>explore</mat-icon>
@@ -160,7 +161,7 @@ import { ThemeStore } from '../../store/theme.store';
       <router-outlet />
     </main>
 
-    @if (isMobile) {
+    @if (isMobile()) {
       <nav class="bottom-nav">
         <a
           mat-button
@@ -384,13 +385,15 @@ export class ShellComponent {
   digestStore = inject(DigestStore);
   themeStore = inject(ThemeStore);
   private router = inject(Router);
-  isMobile = false;
+  isMobile = signal(false);
 
   constructor() {
     const bp = inject(BreakpointObserver);
-    bp.observe([Breakpoints.Handset]).subscribe((result) => {
-      this.isMobile = result.matches;
-    });
+    bp.observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed())
+      .subscribe((result) => {
+        this.isMobile.set(result.matches);
+      });
 
     effect(() => {
       this.authStore.isAuthenticated();
