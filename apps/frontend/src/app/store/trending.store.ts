@@ -114,8 +114,10 @@ export const TrendingStore = signalStore(
               page: nextPage,
             })
           );
+          const existingIds = new Set(store.repos().map((r) => r.id));
+          const unique = res.repos.filter((r) => !existingIds.has(r.id));
           patchState(store, {
-            repos: [...store.repos(), ...res.repos],
+            repos: [...store.repos(), ...unique],
             totalCount: res.totalCount,
             page: nextPage,
             loadingMore: false,
