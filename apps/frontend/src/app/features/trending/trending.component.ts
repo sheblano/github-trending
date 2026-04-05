@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   inject,
   OnInit,
   OnDestroy,
@@ -477,6 +478,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   private authStore = inject(AuthStore);
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
   private searchSubject = new Subject<string>();
   private bp = inject(BreakpointObserver);
   isMobile = signal(false);
@@ -644,7 +646,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
         data: {},
       })
       .afterClosed()
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((name) => {
         if (!name?.trim()) return;
         void this.presetsStore.savePreset(name.trim(), {
@@ -722,7 +724,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.store.starredRepoIds().has(repo.id)) {
       this.api
         .unstarRepo(repo.owner.login, repo.name)
-        .pipe(takeUntilDestroyed())
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.store.markUnstarred(repo.id);
         });
@@ -738,7 +740,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
           starsCount: repo.stargazers_count,
           url: repo.html_url,
         })
-        .pipe(takeUntilDestroyed())
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.store.markStarred(repo.id);
         });
