@@ -1,4 +1,5 @@
 import { inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   signalStore,
   withState,
@@ -26,23 +27,23 @@ export const DigestStore = signalStore(
     const api = inject(ApiService);
     const auth = inject(AuthStore);
     return {
-      async load() {
+      async load(): Promise<void> {
         if (!auth.isAuthenticated()) {
           patchState(store, { digest: null, loading: false });
           return;
         }
         patchState(store, { loading: true });
         try {
-          const d = await api.getDigest().toPromise();
-          patchState(store, { digest: d ?? null, loading: false });
+          const d = await firstValueFrom(api.getDigest());
+          patchState(store, { digest: d, loading: false });
         } catch {
           patchState(store, { loading: false });
         }
       },
-      async markSeen() {
+      async markSeen(): Promise<void> {
         if (!auth.isAuthenticated()) return;
         try {
-          await api.markDigestSeen().toPromise();
+          await firstValueFrom(api.markDigestSeen());
           const d = store.digest();
           if (d) {
             patchState(store, { digest: { ...d, hasUnseen: false } });

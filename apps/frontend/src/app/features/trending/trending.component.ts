@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   inject,
   OnInit,
   OnDestroy,
@@ -7,8 +8,9 @@ import {
   signal,
   effect,
   ElementRef,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,16 +24,19 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { EMPTY, Subject } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+} from 'rxjs/operators';
 import { TrendingStore } from '../../store/trending.store';
 import { AuthStore } from '../../store/auth.store';
 import { ApiService } from '../../core/api.service';
 import { RepoCardComponent } from '../../shared/components/repo-card.component';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { SavePresetDialogComponent } from '../../shared/components/save-preset-dialog.component';
-import { type RepoInsightsPanelData } from '../../shared/components/repo-insights-panel.component';
-import { RepoInsightsDialogComponent } from '../../shared/components/repo-insights-dialog.component';
+import { openInsightsDialog } from '../../shared/helpers/insights-dialog.helper';
 import { PresetsStore } from '../../store/presets.store';
 import {
   RecentlyViewedStore,
@@ -473,40 +478,53 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   private authStore = inject(AuthStore);
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
   private searchSubject = new Subject<string>();
   private bp = inject(BreakpointObserver);
   isMobile = signal(false);
   searchValue = '';
 
-  @ViewChild('scrollRoot') scrollRoot?: ElementRef<HTMLElement>;
-  @ViewChild('loadMoreSentinel') sentinel?: ElementRef<HTMLElement>;
-  @ViewChild('readmeDrawer') readmeDrawer?: ReadmeDrawerComponent;
+  scrollRoot = viewChild<ElementRef<HTMLElement>>('scrollRoot');
+  sentinel = viewChild<ElementRef<HTMLElement>>('loadMoreSentinel');
+  readmeDrawer = viewChild(ReadmeDrawerComponent);
 
   private intersectionObserver?: IntersectionObserver;
 
   languages = LANGUAGES;
   topics = TOPICS;
   constructor() {
-    this.bp.observe([Breakpoints.Handset]).subscribe((r) => {
-      this.isMobile.set(r.matches);
-    });
+    this.bp
+      .observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed())
+      .subscribe((r) => {
+        this.isMobile.set(r.matches);
+      });
 
     this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
       .subscribe((q) => {
         this.scrollTrendingTop();
         this.store.setSearchQuery(q);
         this.store.loadRepos();
       });
 
+    toObservable(this.authStore.isAuthenticated)
+      .pipe(
+        switchMap((authed) => (authed ? this.api.getStarred() : EMPTY)),
+        takeUntilDestroyed()
+      )
+      .subscribe((res) => {
+        this.store.loadStarredIds(
+          res.starred.map((r) => r.githubRepoId)
+        );
+      });
+
     effect(() => {
-      if (this.authStore.isAuthenticated()) {
-        this.api.getStarred().subscribe((res) => {
-          this.store.loadStarredIds(
-            res.starred.map((r) => r.githubRepoId)
-          );
-        });
-      }
+      this.authStore.isAuthenticated();
       void this.presetsStore.load();
     });
 
@@ -532,8 +550,8 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private setupIntersectionObserver() {
     this.intersectionObserver?.disconnect();
-    const el = this.sentinel?.nativeElement;
-    const root = this.scrollRoot?.nativeElement;
+    const el = this.sentinel()?.nativeElement;
+    const root = this.scrollRoot()?.nativeElement;
     if (!el || !root) {
       return;
     }
@@ -549,7 +567,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private scrollTrendingTop() {
-    this.scrollRoot?.nativeElement?.scrollTo({ top: 0, behavior: 'auto' });
+    this.scrollRoot()?.nativeElement?.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   formatStars(value: number): string {
@@ -609,16 +627,10 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   applyPreset(p: TrendingFilterPresetDto) {
-    const f = p.filters;
     this.scrollTrendingTop();
     this.searchSubject.next('');
     this.searchValue = '';
-    this.store.setSearchQuery('');
-    this.store.setLanguage(f.language ?? null);
-    this.store.setTopics([...(f.topics ?? [])]);
-    this.store.setTopicMatchMode(f.topicMatchMode ?? 'or');
-    this.store.setDateRange(f.dateRange ?? 'weekly');
-    this.store.setSort(f.sortBy ?? 'stars', f.order ?? 'desc');
+    this.store.applyPreset(p);
     this.store.loadRepos();
   }
 
@@ -634,6 +646,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
         data: {},
       })
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((name) => {
         if (!name?.trim()) return;
         void this.presetsStore.savePreset(name.trim(), {
@@ -658,86 +671,48 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   showInsightsForRepo(repo: GitHubRepo) {
     this.trackViewed(repo);
-    this.openInsightsDialog({
-      fullName: repo.full_name,
-      htmlUrl: repo.html_url,
-      description: repo.description,
-      language: repo.language,
-      watchScore: repo.watchScore,
-      radarScore: repo.radarScore,
-      badge: this.store.viewMode() === 'radar' ? 'Radar view' : undefined,
-      reasons: [
-        ...(repo.radarReasons ?? []),
-        ...((repo.watchReasons ?? []).filter((r) => !(repo.radarReasons ?? []).includes(r))),
-      ],
-      context:
-        this.store.viewMode() === 'radar'
-          ? 'This repo is being ranked by momentum and health signals instead of the default GitHub order.'
-          : 'These are the health and momentum signals behind the current repo score.',
-    });
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: repo.full_name,
+        htmlUrl: repo.html_url,
+        description: repo.description,
+        language: repo.language,
+        watchScore: repo.watchScore,
+        radarScore: repo.radarScore,
+        badge: this.store.viewMode() === 'radar' ? 'Radar view' : undefined,
+        reasons: [
+          ...(repo.radarReasons ?? []),
+          ...((repo.watchReasons ?? []).filter((r) => !(repo.radarReasons ?? []).includes(r))),
+        ],
+        context:
+          this.store.viewMode() === 'radar'
+            ? 'This repo is being ranked by momentum and health signals instead of the default GitHub order.'
+            : 'These are the health and momentum signals behind the current repo score.',
+      },
+      this.readmeDrawer()
+    );
   }
 
   showInsightsForRecent(item: RecentlyViewedRepo) {
-    this.openInsightsDialog({
-      fullName: item.fullName,
-      htmlUrl: item.htmlUrl,
-      description: item.description,
-      language: item.language,
-      watchScore: item.watchScore,
-      radarScore: item.radarScore,
-      badge: 'Recently viewed',
-      reasons: [
-        ...(item.radarReasons ?? []),
-        ...((item.watchReasons ?? []).filter((r) => !(item.radarReasons ?? []).includes(r))),
-      ],
-      context: `Viewed ${new Date(item.viewedAt).toLocaleString()}.`,
-    });
-  }
-
-  private openInsightsDialog(insight: RepoInsightsPanelData) {
-    this.dialog.open(RepoInsightsDialogComponent, {
-      width: 'min(520px, 92vw)',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
-      data: {
-        insight,
-        onReadme: () => {
-          const drawer = this.readmeDrawer;
-          if (drawer) {
-            this.openReadmeFromPanelData(drawer, insight);
-          }
-        },
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: item.fullName,
+        htmlUrl: item.htmlUrl,
+        description: item.description,
+        language: item.language,
+        watchScore: item.watchScore,
+        radarScore: item.radarScore,
+        badge: 'Recently viewed',
+        reasons: [
+          ...(item.radarReasons ?? []),
+          ...((item.watchReasons ?? []).filter((r) => !(item.radarReasons ?? []).includes(r))),
+        ],
+        context: `Viewed ${new Date(item.viewedAt).toLocaleString()}.`,
       },
-    });
-  }
-
-  private openReadmeFromPanelData(
-    drawer: ReadmeDrawerComponent,
-    s: RepoInsightsPanelData
-  ) {
-    const [owner = '', name = ''] = s.fullName.split('/');
-    this.openReadme(drawer, {
-      id: Date.now(),
-      name,
-      full_name: s.fullName,
-      owner: { login: owner, avatar_url: '' },
-      html_url: s.htmlUrl,
-      description: s.description ?? null,
-      language: s.language ?? null,
-      stargazers_count: 0,
-      forks_count: 0,
-      open_issues_count: 0,
-      pushed_at: new Date().toISOString(),
-      created_at: '',
-      updated_at: '',
-      topics: [],
-      license: null,
-      archived: false,
-      watchScore: s.watchScore,
-      radarScore: s.radarScore,
-      watchReasons: s.reasons,
-      radarReasons: s.reasons,
-    });
+      this.readmeDrawer()
+    );
   }
 
   toggleStar(repo: GitHubRepo) {
@@ -747,9 +722,12 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.store.starredRepoIds().has(repo.id)) {
-      this.api.unstarRepo(repo.owner.login, repo.name).subscribe(() => {
-        this.store.markUnstarred(repo.id);
-      });
+      this.api
+        .unstarRepo(repo.owner.login, repo.name)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.store.markUnstarred(repo.id);
+        });
     } else {
       this.api
         .starRepo({
@@ -762,6 +740,7 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
           starsCount: repo.stargazers_count,
           url: repo.html_url,
         })
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.store.markStarred(repo.id);
         });

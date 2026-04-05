@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { LANGUAGES, formatStarCount } from '@github-trending/shared/utils';
@@ -23,73 +24,12 @@ import type {
   GalaxyDiscoveryNodeDto,
   GitHubRepo,
 } from '@github-trending/shared/models';
-
-/** GitHub-inspired language color map for instant recognition */
-const LANG_COLORS: Record<string, string> = {
-  JavaScript: '#f1e05a',
-  TypeScript: '#3178c6',
-  Python: '#3572A5',
-  Rust: '#dea584',
-  Go: '#00ADD8',
-  Java: '#b07219',
-  'C++': '#f34b7d',
-  C: '#555555',
-  'C#': '#178600',
-  Ruby: '#701516',
-  PHP: '#4F5D95',
-  Swift: '#F05138',
-  Kotlin: '#A97BFF',
-  Dart: '#00B4AB',
-  Scala: '#c22d40',
-  Shell: '#89e051',
-  HTML: '#e34c26',
-  CSS: '#563d7c',
-  Vue: '#41b883',
-  Svelte: '#ff3e00',
-  Zig: '#ec915c',
-  Elixir: '#6e4a7e',
-  Haskell: '#5e5086',
-  Lua: '#000080',
-  R: '#276DC3',
-  Julia: '#a270ba',
-  Nix: '#7e7eff',
-  Other: '#8b9467',
-};
-
-const OVERFLOW_PALETTE = [
-  '#e91e63', '#ff5722', '#00bcd4', '#8bc34a', '#9c27b0',
-  '#ff9800', '#4caf50', '#2196f3', '#cddc39', '#795548',
-];
-
-function colorForGroup(g: string): string {
-  const direct = LANG_COLORS[g];
-  if (direct) return direct;
-  let h = 0;
-  for (let i = 0; i < g.length; i++) {
-    h = (h * 31 + g.charCodeAt(i)) >>> 0;
-  }
-  return OVERFLOW_PALETTE[h % OVERFLOW_PALETTE.length]!;
-}
-
-/** Min-max normalize nodes so they spread across the full canvas */
-function normalizeNodes(nodes: import('@github-trending/shared/models').GalaxyDiscoveryNodeDto[]): import('@github-trending/shared/models').GalaxyDiscoveryNodeDto[] {
-  if (nodes.length < 2) return nodes;
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (const n of nodes) {
-    if (n.x < minX) minX = n.x;
-    if (n.x > maxX) maxX = n.x;
-    if (n.y < minY) minY = n.y;
-    if (n.y > maxY) maxY = n.y;
-  }
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-  const PAD = 0.06;
-  return nodes.map((n) => ({
-    ...n,
-    x: PAD + ((n.x - minX) / rangeX) * (1 - 2 * PAD),
-    y: PAD + ((n.y - minY) / rangeY) * (1 - 2 * PAD),
-  }));
-}
+import {
+  colorForGroup,
+  normalizeNodes,
+  nodeRadius,
+  buildLegend,
+} from './galaxy-layout.utils';
 
 @Component({
   selector: 'app-galaxy',
@@ -154,6 +94,7 @@ function normalizeNodes(nodes: import('@github-trending/shared/models').GalaxyDi
     } @else {
       <div class="galaxy-split" [class.has-selection]="selected()">
         <div class="canvas-wrap">
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <svg
             class="galaxy-svg"
             viewBox="0 0 100 100"
@@ -224,10 +165,10 @@ function normalizeNodes(nodes: import('@github-trending/shared/models').GalaxyDi
                 </ul>
               }
               <div class="scores">
-                @if (s.radarScore != null) {
+                @if (s.radarScore !== null && s.radarScore !== undefined) {
                   <span>Radar {{ s.radarScore }}</span>
                 }
-                @if (s.watchScore != null) {
+                @if (s.watchScore !== null && s.watchScore !== undefined) {
                   <span>Watch {{ s.watchScore }}</span>
                 }
               </div>
@@ -458,6 +399,7 @@ export class GalaxyComponent implements OnInit {
 
   formatStars = formatStarCount;
   colorForGroup = colorForGroup;
+  radius = nodeRadius;
 
   dimOthers = computed(() => this.selected() !== null);
 
@@ -479,8 +421,8 @@ export class GalaxyComponent implements OnInit {
     this.loading.set(true);
     this.selected.set(null);
     try {
-      const res = await this.api
-        .getDiscovery({
+      const res = await firstValueFrom(
+        this.api.getDiscovery({
           language: this.language(),
           dateRange: this.dateRange(),
           perPage: 60,
@@ -488,8 +430,8 @@ export class GalaxyComponent implements OnInit {
           order: 'desc',
           page: 1,
         })
-        .toPromise();
-      this.nodes.set(normalizeNodes(res?.nodes ?? []));
+      );
+      this.nodes.set(normalizeNodes(res.nodes ?? []));
     } catch {
       this.nodes.set([]);
     } finally {
@@ -497,18 +439,7 @@ export class GalaxyComponent implements OnInit {
     }
   }
 
-  legendEntries = computed(() => {
-    const seen = new Map<string, string>();
-    for (const n of this.nodes()) {
-      const g = n.colorGroup || 'Other';
-      if (!seen.has(g)) seen.set(g, colorForGroup(g));
-    }
-    return [...seen.entries()].map(([lang, color]) => ({ lang, color }));
-  });
-
-  radius(n: GalaxyDiscoveryNodeDto): number {
-    return 0.9 + n.sizeNorm * 3.4;
-  }
+  legendEntries = computed(() => buildLegend(this.nodes()));
 
   select(ev: MouseEvent, n: GalaxyDiscoveryNodeDto): void {
     ev.stopPropagation();

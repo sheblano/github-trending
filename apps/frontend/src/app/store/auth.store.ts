@@ -1,4 +1,5 @@
 import { computed, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   signalStore,
   withState,
@@ -28,20 +29,20 @@ export const AuthStore = signalStore(
   withMethods((store) => {
     const api = inject(ApiService);
     return {
-      async loadUser() {
+      async loadUser(): Promise<void> {
         patchState(store, { isLoading: true });
         try {
-          const res = await api.getMe().toPromise();
-          patchState(store, { user: res?.user ?? null, isLoading: false });
+          const res = await firstValueFrom(api.getMe());
+          patchState(store, { user: res.user ?? null, isLoading: false });
         } catch {
           patchState(store, { user: null, isLoading: false });
         }
       },
-      login(returnUrl = '/trending') {
+      login(returnUrl = '/trending'): void {
         window.location.href = `/api/auth/github?returnUrl=${encodeURIComponent(returnUrl)}`;
       },
-      async logout() {
-        await api.logout().toPromise();
+      async logout(): Promise<void> {
+        await firstValueFrom(api.logout());
         patchState(store, { user: null });
         window.location.href = '/trending';
       },

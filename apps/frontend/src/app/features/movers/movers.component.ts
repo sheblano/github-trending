@@ -1,4 +1,12 @@
-import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,11 +16,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../../core/api.service';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
-import { type RepoInsightsPanelData } from '../../shared/components/repo-insights-panel.component';
-import { RepoInsightsDialogComponent } from '../../shared/components/repo-insights-dialog.component';
+import { openInsightsDialog } from '../../shared/helpers/insights-dialog.helper';
 import { formatRelativeDate } from '@github-trending/shared/utils';
 import type {
-  GitHubRepo,
   HotSnapshotDto,
   TimelineEventDto,
   TopMoversResponse,
@@ -74,7 +80,7 @@ import type {
                   </mat-card-title>
                   <mat-card-subtitle>
                     ★ {{ h.starsCount.toLocaleString() }}
-                    @if (h.radarScore != null) {
+                    @if (h.radarScore !== null && h.radarScore !== undefined) {
                       <mat-chip class="score-chip">Radar {{ h.radarScore }}</mat-chip>
                     }
                   </mat-card-subtitle>
@@ -268,11 +274,12 @@ import type {
 export class MoversComponent implements OnInit {
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
   data = signal<TopMoversResponse | null>(null);
   loading = signal(true);
   formatDate = formatRelativeDate;
 
-  @ViewChild('readmeDrawer') readmeDrawer?: ReadmeDrawerComponent;
+  readmeDrawer = viewChild(ReadmeDrawerComponent);
 
   ngOnInit(): void {
     this.load();
@@ -283,14 +290,18 @@ export class MoversComponent implements OnInit {
   }
 
   selectHotSnapshot(h: HotSnapshotDto): void {
-    this.openInsightsDialog({
-      fullName: h.fullName,
-      htmlUrl: this.githubUrl(h.fullName),
-      radarScore: h.radarScore ?? undefined,
-      reasons: h.whyHot,
-      badge: 'Top movers',
-      context: `Captured ${this.formatDate(h.capturedAt)} from the recent movers snapshot.`,
-    });
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: h.fullName,
+        htmlUrl: this.githubUrl(h.fullName),
+        radarScore: h.radarScore ?? undefined,
+        reasons: h.whyHot,
+        badge: 'Top movers',
+        context: `Captured ${this.formatDate(h.capturedAt)} from the recent movers snapshot.`,
+      },
+      this.readmeDrawer()
+    );
   }
 
   selectEvent(e: TimelineEventDto): void {
@@ -306,65 +317,22 @@ export class MoversComponent implements OnInit {
     if (e.eventType === 'release_published' && typeof meta['tagName'] === 'string') {
       reasons.push(`Published release ${meta['tagName']}.`);
     }
-    this.openInsightsDialog({
-      fullName: e.fullName,
-      htmlUrl: this.githubUrl(e.fullName),
-      reasons,
-      badge: e.eventType.replace('_', ' '),
-      context: `Event recorded ${this.formatDate(e.eventAt)} on the movers timeline.`,
-    });
-  }
-
-  private openInsightsDialog(insight: RepoInsightsPanelData) {
-    this.dialog.open(RepoInsightsDialogComponent, {
-      width: 'min(520px, 92vw)',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
-      data: {
-        insight,
-        onReadme: () => {
-          const drawer = this.readmeDrawer;
-          if (drawer) {
-            this.openReadmeFromPanelData(drawer, insight);
-          }
-        },
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: e.fullName,
+        htmlUrl: this.githubUrl(e.fullName),
+        reasons,
+        badge: e.eventType.replace('_', ' '),
+        context: `Event recorded ${this.formatDate(e.eventAt)} on the movers timeline.`,
       },
-    });
-  }
-
-  private openReadmeFromPanelData(
-    drawer: ReadmeDrawerComponent,
-    s: RepoInsightsPanelData
-  ) {
-    const [owner = '', name = ''] = s.fullName.split('/');
-    const repo = {
-      id: Date.now(),
-      name,
-      full_name: s.fullName,
-      owner: { login: owner, avatar_url: '' },
-      html_url: s.htmlUrl,
-      description: s.description ?? null,
-      language: s.language ?? null,
-      stargazers_count: 0,
-      forks_count: 0,
-      open_issues_count: 0,
-      pushed_at: new Date().toISOString(),
-      created_at: '',
-      updated_at: '',
-      topics: [],
-      license: null,
-      archived: false,
-      watchReasons: [],
-      radarReasons: s.reasons,
-      radarScore: s.radarScore,
-      watchScore: s.watchScore,
-    } as GitHubRepo;
-    drawer.openRepo(repo);
+      this.readmeDrawer()
+    );
   }
 
   load(): void {
     this.loading.set(true);
-    this.api.getMovers().subscribe({
+    this.api.getMovers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.data.set(res);
         this.loading.set(false);

@@ -26,7 +26,7 @@ export async function createSession(
 export function setSessionCookieOnResponse(
   response: NextResponse,
   sessionId: string
-) {
+): void {
   response.cookies.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
     secure: isSecure(),
@@ -36,7 +36,7 @@ export function setSessionCookieOnResponse(
   });
 }
 
-export async function clearSessionCookie() {
+export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
 }
@@ -55,7 +55,9 @@ export async function getSessionUserId(
 
   if (!session || session.expiresAt < new Date()) {
     if (session) {
-      await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
+      await prisma.session.delete({ where: { id: sessionId } }).catch((err) =>
+        console.error('[session] failed to delete expired session:', err)
+      );
     }
     return null;
   }
@@ -63,11 +65,13 @@ export async function getSessionUserId(
   return session.userId;
 }
 
-export async function invalidateSession(prisma: PrismaClient) {
+export async function invalidateSession(prisma: PrismaClient): Promise<void> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (sessionId) {
-    await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
+    await prisma.session.delete({ where: { id: sessionId } }).catch((err) =>
+      console.error('[session] failed to delete session on invalidate:', err)
+    );
   }
   await clearSessionCookie();
 }

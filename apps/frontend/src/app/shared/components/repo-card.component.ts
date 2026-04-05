@@ -17,8 +17,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type { GitHubRepo, StarHistoryPoint } from '@github-trending/shared/models';
 import { formatStarCount, getCommitRecency } from '@github-trending/shared/utils';
 import { formatRelativeDate } from '@github-trending/shared/utils';
-import { ApiService } from '../../core/api.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthStore } from '../../store/auth.store';
+import { StarHistoryService } from '../../core/star-history.service';
 import { SparklineComponent } from './sparkline.component';
 import { AnimateCountDirective } from '../directives/animate-count.directive';
 
@@ -529,7 +530,7 @@ export class RepoCardComponent implements AfterViewInit {
   previewClick = output<void>();
 
   authStore = inject(AuthStore);
-  private api = inject(ApiService);
+  private starHistoryService = inject(StarHistoryService);
   private el = inject(ElementRef);
   private destroyRef = inject(DestroyRef);
 
@@ -622,21 +623,17 @@ export class RepoCardComponent implements AfterViewInit {
       (entries) => {
         if (!entries[0]?.isIntersecting) return;
         obs.disconnect();
-        if (!this.authStore.isAuthenticated()) {
-          return;
-        }
+        if (!this.authStore.isAuthenticated()) return;
+
         const r = this.repo();
         this.starHistoryLoading.set(true);
-        this.api.getStarHistory(r.owner.login, r.name).subscribe({
-          next: (res) => {
-            this.starHistory.set(res.history ?? []);
+        this.starHistoryService
+          .getHistory(r.owner.login, r.name)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((history) => {
+            this.starHistory.set(history);
             this.starHistoryLoading.set(false);
-          },
-          error: () => {
-            this.starHistory.set([]);
-            this.starHistoryLoading.set(false);
-          },
-        });
+          });
       },
       { root: null, rootMargin: '120px', threshold: 0.01 }
     );

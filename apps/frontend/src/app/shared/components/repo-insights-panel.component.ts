@@ -41,10 +41,10 @@ export interface RepoInsightsPanelData {
           <p class="context">{{ data().context }}</p>
         }
         <div class="scores">
-          @if (data().radarScore != null) {
+          @if (data().radarScore !== null && data().radarScore !== undefined) {
             <mat-chip>Radar {{ data().radarScore }}</mat-chip>
           }
-          @if (data().watchScore != null) {
+          @if (data().watchScore !== null && data().watchScore !== undefined) {
             <mat-chip>Health {{ data().watchScore }}</mat-chip>
           }
         </div>

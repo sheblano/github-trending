@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, TimelineEvent } from '@prisma/client';
 
 export interface TimelineQuery {
   repo?: string;
@@ -13,7 +13,7 @@ export interface TimelineQuery {
 export async function listTimelineEvents(
   prisma: PrismaClient,
   q: TimelineQuery
-) {
+): Promise<TimelineEvent[]> {
   const limit = Math.min(Math.max(q.limit ?? 100, 1), 200);
   const where: {
     fullName?: string;

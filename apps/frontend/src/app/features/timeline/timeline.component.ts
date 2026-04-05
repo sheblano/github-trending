@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -203,6 +204,7 @@ import type { TimelineEventDto } from '@github-trending/shared/models';
 })
 export class TimelineComponent implements OnInit {
   private api = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
 
   events = signal<TimelineEventDto[]>([]);
   loading = signal(false);
@@ -223,6 +225,7 @@ export class TimelineComponent implements OnInit {
         eventType: this.typeFilter || undefined,
         limit: 150,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.events.set(res.events ?? []);
