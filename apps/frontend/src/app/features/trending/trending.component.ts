@@ -35,8 +35,7 @@ import { ApiService } from '../../core/api.service';
 import { RepoCardComponent } from '../../shared/components/repo-card.component';
 import { ReadmeDrawerComponent } from '../../shared/components/readme-drawer.component';
 import { SavePresetDialogComponent } from '../../shared/components/save-preset-dialog.component';
-import { type RepoInsightsPanelData } from '../../shared/components/repo-insights-panel.component';
-import { RepoInsightsDialogComponent } from '../../shared/components/repo-insights-dialog.component';
+import { openInsightsDialog } from '../../shared/helpers/insights-dialog.helper';
 import { PresetsStore } from '../../store/presets.store';
 import {
   RecentlyViewedStore,
@@ -626,16 +625,10 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   applyPreset(p: TrendingFilterPresetDto) {
-    const f = p.filters;
     this.scrollTrendingTop();
     this.searchSubject.next('');
     this.searchValue = '';
-    this.store.setSearchQuery('');
-    this.store.setLanguage(f.language ?? null);
-    this.store.setTopics([...(f.topics ?? [])]);
-    this.store.setTopicMatchMode(f.topicMatchMode ?? 'or');
-    this.store.setDateRange(f.dateRange ?? 'weekly');
-    this.store.setSort(f.sortBy ?? 'stars', f.order ?? 'desc');
+    this.store.applyPreset(p);
     this.store.loadRepos();
   }
 
@@ -676,86 +669,48 @@ export class TrendingComponent implements OnInit, AfterViewInit, OnDestroy {
 
   showInsightsForRepo(repo: GitHubRepo) {
     this.trackViewed(repo);
-    this.openInsightsDialog({
-      fullName: repo.full_name,
-      htmlUrl: repo.html_url,
-      description: repo.description,
-      language: repo.language,
-      watchScore: repo.watchScore,
-      radarScore: repo.radarScore,
-      badge: this.store.viewMode() === 'radar' ? 'Radar view' : undefined,
-      reasons: [
-        ...(repo.radarReasons ?? []),
-        ...((repo.watchReasons ?? []).filter((r) => !(repo.radarReasons ?? []).includes(r))),
-      ],
-      context:
-        this.store.viewMode() === 'radar'
-          ? 'This repo is being ranked by momentum and health signals instead of the default GitHub order.'
-          : 'These are the health and momentum signals behind the current repo score.',
-    });
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: repo.full_name,
+        htmlUrl: repo.html_url,
+        description: repo.description,
+        language: repo.language,
+        watchScore: repo.watchScore,
+        radarScore: repo.radarScore,
+        badge: this.store.viewMode() === 'radar' ? 'Radar view' : undefined,
+        reasons: [
+          ...(repo.radarReasons ?? []),
+          ...((repo.watchReasons ?? []).filter((r) => !(repo.radarReasons ?? []).includes(r))),
+        ],
+        context:
+          this.store.viewMode() === 'radar'
+            ? 'This repo is being ranked by momentum and health signals instead of the default GitHub order.'
+            : 'These are the health and momentum signals behind the current repo score.',
+      },
+      this.readmeDrawer()
+    );
   }
 
   showInsightsForRecent(item: RecentlyViewedRepo) {
-    this.openInsightsDialog({
-      fullName: item.fullName,
-      htmlUrl: item.htmlUrl,
-      description: item.description,
-      language: item.language,
-      watchScore: item.watchScore,
-      radarScore: item.radarScore,
-      badge: 'Recently viewed',
-      reasons: [
-        ...(item.radarReasons ?? []),
-        ...((item.watchReasons ?? []).filter((r) => !(item.radarReasons ?? []).includes(r))),
-      ],
-      context: `Viewed ${new Date(item.viewedAt).toLocaleString()}.`,
-    });
-  }
-
-  private openInsightsDialog(insight: RepoInsightsPanelData) {
-    this.dialog.open(RepoInsightsDialogComponent, {
-      width: 'min(520px, 92vw)',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
-      data: {
-        insight,
-        onReadme: () => {
-          const drawer = this.readmeDrawer();
-          if (drawer) {
-            this.openReadmeFromPanelData(drawer, insight);
-          }
-        },
+    openInsightsDialog(
+      this.dialog,
+      {
+        fullName: item.fullName,
+        htmlUrl: item.htmlUrl,
+        description: item.description,
+        language: item.language,
+        watchScore: item.watchScore,
+        radarScore: item.radarScore,
+        badge: 'Recently viewed',
+        reasons: [
+          ...(item.radarReasons ?? []),
+          ...((item.watchReasons ?? []).filter((r) => !(item.radarReasons ?? []).includes(r))),
+        ],
+        context: `Viewed ${new Date(item.viewedAt).toLocaleString()}.`,
       },
-    });
-  }
-
-  private openReadmeFromPanelData(
-    drawer: ReadmeDrawerComponent,
-    s: RepoInsightsPanelData
-  ) {
-    const [owner = '', name = ''] = s.fullName.split('/');
-    this.openReadme(drawer, {
-      id: Date.now(),
-      name,
-      full_name: s.fullName,
-      owner: { login: owner, avatar_url: '' },
-      html_url: s.htmlUrl,
-      description: s.description ?? null,
-      language: s.language ?? null,
-      stargazers_count: 0,
-      forks_count: 0,
-      open_issues_count: 0,
-      pushed_at: new Date().toISOString(),
-      created_at: '',
-      updated_at: '',
-      topics: [],
-      license: null,
-      archived: false,
-      watchScore: s.watchScore,
-      radarScore: s.radarScore,
-      watchReasons: s.reasons,
-      radarReasons: s.reasons,
-    });
+      this.readmeDrawer()
+    );
   }
 
   toggleStar(repo: GitHubRepo) {

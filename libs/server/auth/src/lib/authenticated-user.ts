@@ -41,7 +41,9 @@ export async function getAuthenticatedUserId(
       where: { id: row.id },
       data: { lastUsedAt: new Date() },
     })
-    .catch(() => {});
+    .catch((err) =>
+      console.error('[auth] failed to update token lastUsedAt:', err)
+    );
 
   return row.userId;
 }

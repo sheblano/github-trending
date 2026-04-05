@@ -14,6 +14,7 @@ import type {
   RepoSortField,
   SortOrder,
   TrendingViewMode,
+  TrendingFilterPresetDto,
   TopicMatchMode,
 } from '@github-trending/shared/models';
 
@@ -159,6 +160,19 @@ export const TrendingStore = signalStore(
       },
       loadStarredIds(ids: number[]): void {
         patchState(store, { starredRepoIds: new Set(ids) });
+      },
+      applyPreset(p: TrendingFilterPresetDto): void {
+        const f = p.filters;
+        patchState(store, {
+          searchQuery: '',
+          language: f.language ?? null,
+          topics: [...(f.topics ?? [])],
+          topicMatchMode: f.topicMatchMode ?? 'or',
+          dateRange: f.dateRange ?? 'weekly',
+          sortBy: f.sortBy ?? 'stars',
+          order: f.order ?? 'desc',
+          page: 1,
+        });
       },
     };
   })

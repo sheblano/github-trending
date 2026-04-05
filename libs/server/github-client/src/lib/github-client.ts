@@ -144,12 +144,14 @@ export async function getRepoReleases(
   );
 }
 
-export async function getGitHubUser(token: string) {
-  const { data } = await githubFetch<{
-    id: number;
-    login: string;
-    avatar_url: string;
-  }>('/user', { token });
+export interface GitHubUser {
+  id: number;
+  login: string;
+  avatar_url: string;
+}
+
+export async function getGitHubUser(token: string): Promise<GitHubUser> {
+  const { data } = await githubFetch<GitHubUser>('/user', { token });
   return data;
 }
 

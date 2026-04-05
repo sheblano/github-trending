@@ -27,7 +27,9 @@ export async function GET(request: Request) {
   if (existingCount === 0) {
     await reconcileStarredRepos(prisma, userId, token);
   } else {
-    reconcileStarredRepos(prisma, userId, token).catch(() => {});
+    reconcileStarredRepos(prisma, userId, token).catch((err) =>
+      console.error('[starred] background reconcile failed:', err)
+    );
   }
 
   const [starred, totalCount] = await Promise.all([
