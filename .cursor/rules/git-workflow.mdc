@@ -6,6 +6,8 @@ alwaysApply: true
 
 # Git Workflow Rule for Agents
 
+**Never commit or push automatically.** Only commit when the user explicitly asks (e.g. "commit", "commit and push", "push it"). When in doubt, ask first.
+
 Follow this workflow **before every push**. Do not skip steps.
 
 ## 1. Sync with main
