@@ -1,0 +1,59 @@
+---
+description: Git workflow agents must follow before pushing (branch, checks, PR)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Git Workflow Rule for Agents
+
+Follow this workflow **before every push**. Do not skip steps.
+
+## 1. Sync with main
+
+- Before starting new work: `git checkout main && git pull origin main`
+- Create your branch from the updated `main`
+- If already on a feature branch, update it with the latest `origin/main` via rebase or merge before pushing; do not switch branches if that would disrupt uncommitted work
+
+## 2. Create a branch with enforced naming
+
+- **Allowed prefixes**: `feature/`, `fix/`, `chore/`, `docs/`, `refactor/`
+- **Format**: `<prefix><kebab-case-description>` (e.g. `feature/hero-headline-rewrite`)
+- **Max length**: 50 characters total
+- **Avoid**: generic names like `feature/update`, `fix/fix`, `feature/changes`
+- `git checkout -b <branch-name>`
+
+## 3. Make changes
+
+Implement the task on the branch.
+
+## 4. Pre-commit checks (all must pass before committing)
+
+Run from repo root:
+
+- **Lint all projects**: `pnpm nx run-many -t lint` — zero errors
+- **Typecheck**: run project configs explicitly — `npx tsc --noEmit -p apps/frontend/tsconfig.json` and `npx tsc --noEmit -p apps/backend/tsconfig.json` — zero errors
+- **Secrets scan**: `git diff --cached --name-only` must **not** include `.env`, `credentials.json`, or paths matching `*secret*` (case-insensitive)
+- **Debug artifacts**: search **staged** content for `console.log` and `debugger` — remove unless explicitly required; warn the user if any remain
+- **Conflict markers**: search staged files for `<<<<<<<`, `=======`, `>>>>>>>` — **fail** if found
+
+## 5. Commit
+
+- Stage only intentional files — **never** commit `node_modules/`, `dist/`, `out-tsc/`, `.next/`, `out/`, `.angular/`, `.nx/cache/`, `__screenshots__/`, or Prisma migration files
+- **Commit message**: clear summary line; add a body when the change needs context ("why")
+
+## 6. Push and open a PR
+
+- `git push -u origin HEAD`
+- If **GitHub CLI** is available (`command -v gh` or `which gh`):
+  - Create a PR with a **descriptive title**
+  - **Body** must include:
+    - **Summary** (bullet points)
+    - **Changes** (files / areas affected)
+    - **Test plan** (checkbox list)
+- If `gh` is **not** available: push the branch only and tell the user to open a PR manually (include branch name and remote URL if known)
+
+## 7. Post-push
+
+- Print the **PR URL** when `gh pr create` succeeds
+- If `gh` is available, run `gh pr checks` (or equivalent) and **report** CI status
+- If checks fail, report **which** check failed and stop claiming the change is "green"

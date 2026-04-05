@@ -1,0 +1,112 @@
+---
+description: Development standards — design, TypeScript, Angular, signals, state management, Nx, styling, testing
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Development Standards
+
+How code should be designed and written. Git workflow lives in `git-workflow.mdc`.
+
+## 1. Code Design
+
+- Enforce separation of concerns
+- Prefer composition over inheritance
+- Apply SOLID principles when they improve maintainability
+- Keep functions and components small and single-purpose
+- Use early returns to reduce nesting
+- Prefer pure functions where possible
+- Prefer consistent patterns over clever one-off solutions
+- Do not introduce quick hacks without clearly flagging them
+
+## 2. TypeScript Discipline
+
+- Use TypeScript types heavily wherever possible
+- Prefer explicit types at boundaries: inputs, params, return values, API data, store state, and config objects
+- Avoid `any`; if unavoidable, explain why
+- If a type or interface becomes too large or confusing, split it into smaller reusable types
+- Handle `null` / `undefined` intentionally, not implicitly
+
+## 3. Readability & Maintainability
+
+- Clean, readable code is the default goal
+- Write code for the next reader, not just runtime correctness
+- Extract repeated logic into utilities, services, or shared helpers
+- Avoid magic strings/numbers; use named constants
+- Minimize comments; only add them when intent is not obvious
+- Prefer immutable updates over mutating shared state
+
+## 4. Async, Reactivity & Error Handling
+
+- Services should return `Observable`; convert to signals at the consumption site with `toSignal()` or subscribe in stores
+- Use `takeUntilDestroyed()` from `@angular/core/rxjs-interop` for subscription cleanup — preferred over manual `DestroyRef.onDestroy`
+- Prefer `async/await` over `.then()` / `.catch()` chains when working with promises
+- Keep async flows readable and explicit
+- Fail loudly for invalid states; do not silently swallow errors — surface or log them clearly
+
+## 5. Angular Conventions
+
+### Architecture
+
+- Standalone-only — never introduce `@NgModule`
+- Zoneless — the app uses `provideZonelessChangeDetection()`; do not add `zone.js` or rely on Zone-based change detection
+- Keep components presentational; push logic into stores, services, or helpers
+- Preserve existing UX and animation behavior unless the task explicitly changes it
+
+### Dependency Injection
+
+- Always use the `inject()` function — never constructor-parameter DI
+- Write guards, interceptors, and resolvers as functions (not classes)
+
+### Signals
+
+- Use `signal()`, `computed()`, `effect()` as the primary reactivity model
+- Use `input()` / `output()` signal APIs — never `@Input()` / `@Output()` decorators
+- Use `model()` for two-way binding scenarios instead of `@Input()` + `@Output()` pairs
+- Prefer `viewChild()` / `viewChildren()` signal queries for new code; migrate legacy `@ViewChild()` / `@ViewChildren()` usages when touching those files and the change is low-risk
+- Prefer `linkedSignal()` when you need a writable signal derived from another signal
+- Prefer `toSignal()` to bridge RxJS observables into the signal graph when it improves clarity; use `toObservable()` for the reverse when needed
+
+### Templates
+
+- Use built-in control flow: `@if`, `@for` (with `track`), `@switch`, `@empty` — never `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use `@defer` blocks when they meaningfully improve loading behavior for heavy UI (charts, markdown renderers, etc.)
+
+### Data Loading
+
+- Prefer `resource()` / `httpResource()` for new signal-driven async flows when they make the data lifecycle clearer; do not refactor stable code only to adopt them
+- Prefer `afterNextRender()` for one-time DOM setup and `afterRender()` for render-driven side effects when they improve clarity; avoid replacing stable lifecycle hooks without a clear benefit
+
+### Routing
+
+- Lazy-load via `loadComponent()` — no `loadChildren` with module arrays
+- Prefer `withComponentInputBinding()` when route params map cleanly to component `input()` signals and the route is being actively changed
+
+### Material
+
+- Import Angular Material modules per component — no shared barrel module
+
+## 6. State Management
+
+- Use `@ngrx/signals` `signalStore` for feature state (stores live under `app/store/` or colocated with the feature)
+- Lightweight app-wide state (theme, recently-viewed) can use a plain `@Injectable` with `signal()` / `computed()`
+- Do not introduce `@ngrx/store`, `@ngrx/effects`, or any classic Redux-style state layer
+- Use `patchState()` for immutable state updates inside `withMethods`
+
+## 7. Nx Monorepo
+
+- Respect `@nx/enforce-module-boundaries` — shared types/utils in `libs/shared/*`, server-only code in `libs/server/*`
+- Run all tasks through `pnpm nx` — never call underlying tooling directly
+- Use `nx g` for scaffolding new projects or libraries
+
+## 8. Styling
+
+- Use SCSS; follow Angular Material theming conventions (`@use '@angular/material' as mat`)
+- Colocate component styles (inline or `.component.scss`)
+- Use Material design tokens / theme API over hardcoded color values
+
+## 9. Testing Stance
+
+- No unit tests required per project decision
+- Verify correctness with `pnpm nx run-many -t lint` and `npx tsc --noEmit` before committing
+- Do not generate test files unless the user explicitly asks
