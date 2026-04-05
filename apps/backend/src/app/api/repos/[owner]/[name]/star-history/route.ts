@@ -113,9 +113,13 @@ export async function GET(
 
     const timestamps: number[] = [];
     for (const p of pages) {
-      const rows = await getStargazersPage(owner, name, p, PER_PAGE, token);
-      for (const row of rows) {
-        timestamps.push(new Date(row.starred_at).getTime());
+      try {
+        const rows = await getStargazersPage(owner, name, p, PER_PAGE, token);
+        for (const row of rows) {
+          timestamps.push(new Date(row.starred_at).getTime());
+        }
+      } catch {
+        break;
       }
     }
 
